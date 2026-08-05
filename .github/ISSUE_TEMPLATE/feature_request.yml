@@ -1,0 +1,40 @@
+name: Proponer una funcionalidad
+description: Proponer una mejora para GymBro
+title: "feat: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema
+      description: ¿Qué dificultad del usuario resolvería?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Propuesta
+      description: Explicá cómo imaginás la solución.
+    validations:
+      required: true
+
+  - type: textarea
+    id: value
+    attributes:
+      label: Valor para el usuario
+      description: ¿Cómo ayuda a entrenar más o mejor?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Prioridad estimada
+      options:
+        - MVP
+        - Después del MVP
+        - Idea futura
+    validations:
+      required: true

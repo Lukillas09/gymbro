@@ -1,36 +1,246 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GymBro
 
-## Getting Started
+GymBro es una aplicación web mobile-first orientada al entrenamiento de musculación, diseñada para organizar rutinas, registrar ejercicios, controlar descansos y analizar el progreso del usuario.
 
-First, run the development server:
+El objetivo del producto es funcionar como un compañero de entrenamiento: rápido durante la sesión, útil para progresar y motivador mediante la actividad de los GymBros del usuario.
+
+## Estado del proyecto
+
+El proyecto se encuentra en su fase inicial de definición y construcción de fundamentos.
+
+Actualmente se está trabajando en:
+
+- estructura del repositorio;
+- documentación del producto;
+- arquitectura inicial;
+- configuración de calidad;
+- integración continua.
+
+## Funcionalidades planificadas
+
+### MVP
+
+- Registro e inicio de sesión.
+- Perfil de usuario.
+- Biblioteca de ejercicios.
+- Creación y edición de rutinas.
+- Registro de series, repeticiones y peso.
+- Temporizador de descanso.
+- Historial de entrenamientos.
+- Calendario de asistencia.
+- Estadísticas básicas de progreso.
+
+### Funcionalidades futuras
+
+- Recomendaciones automáticas de progresión.
+- Generación de rutinas.
+- Sistema de GymBros.
+- Actividad de amigos en tiempo real.
+- Logros e insignias.
+- Retos y comparaciones entre amigos.
+- Estadísticas avanzadas.
+
+## Stack inicial
+
+- Next.js.
+- React.
+- TypeScript.
+- Tailwind CSS.
+- Supabase.
+- PostgreSQL.
+- GitHub Actions.
+- Vercel.
+
+## Requisitos
+
+Para ejecutar el proyecto localmente se necesita:
+
+- Node.js 24.
+- npm.
+- Git.
+
+Para administrar el repositorio también se recomienda:
+
+- GitHub CLI.
+- Visual Studio Code.
+
+## Instalación local
+
+Clonar el repositorio:
+
+```bash
+git clone URL_DEL_REPOSITORIO
+```
+
+Entrar en la carpeta:
+
+```bash
+cd gymbro
+```
+
+Instalar las dependencias:
+
+```bash
+npm ci
+```
+
+Crear el archivo de variables de entorno:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+Iniciar el servidor de desarrollo:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abrir la aplicación en:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Comandos disponibles
 
-## Learn More
+Iniciar el entorno de desarrollo:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Ejecutar ESLint:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run lint
+```
 
-## Deploy on Vercel
+Comprobar los tipos de TypeScript:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run typecheck
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Formatear los archivos:
+
+```bash
+npm run format
+```
+
+Verificar el formato:
+
+```bash
+npm run format:check
+```
+
+Generar la compilación de producción:
+
+```bash
+npm run build
+```
+
+Ejecutar todas las validaciones del proyecto:
+
+```bash
+npm run check
+```
+
+## Estructura principal
+
+```text
+gymbro/
+├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   └── workflows/
+├── docs/
+│   └── decisions/
+├── public/
+├── src/
+│   ├── app/
+│   ├── components/
+│   ├── features/
+│   ├── hooks/
+│   ├── lib/
+│   └── types/
+├── supabase/
+│   └── migrations/
+├── tests/
+│   └── e2e/
+├── .env.example
+├── AGENTS.md
+├── CONTRIBUTING.md
+├── README.md
+└── package.json
+```
+
+## Documentación
+
+- `docs/product.md`: visión, público objetivo y alcance.
+- `docs/roadmap.md`: fases de desarrollo.
+- `docs/architecture.md`: arquitectura y responsabilidades.
+- `docs/database.md`: modelo de datos.
+- `docs/decisions/`: decisiones técnicas relevantes.
+- `AGENTS.md`: instrucciones para Codex y otros agentes.
+- `CONTRIBUTING.md`: reglas para ramas, commits y pull requests.
+
+## Flujo de trabajo
+
+La rama `main` debe permanecer estable.
+
+Cada funcionalidad se desarrolla en una rama independiente:
+
+```text
+feat/nombre-funcionalidad
+fix/nombre-error
+docs/nombre-documentacion
+refactor/nombre-cambio
+chore/nombre-tarea
+```
+
+Ejemplo:
+
+```bash
+git switch main
+git pull
+git switch -c feat/routine-editor
+```
+
+Antes de subir cambios:
+
+```bash
+npm run check
+```
+
+## Convención de commits
+
+El proyecto utiliza Conventional Commits:
+
+```text
+feat: add routine creation flow
+fix: preserve active workout after refresh
+docs: define initial database model
+test: cover workout completion
+refactor: extract progression service
+chore: configure continuous integration
+```
+
+## Variables de entorno
+
+Las variables necesarias se documentan en:
+
+```text
+.env.example
+```
+
+Las credenciales reales deben guardarse únicamente en:
+
+```text
+.env.local
+```
+
+El archivo `.env.local` nunca debe subirse al repositorio.
+
+## Licencia
+
+La licencia del proyecto todavía no fue definida.
