@@ -169,7 +169,7 @@ gymbro/
 │   └── e2e/
 ├── .env.example
 ├── AGENTS.md
-├── CONTRIBUTING.md
+├── CONTRIBUTING.MD
 ├── README.md
 └── package.json
 ```
@@ -182,7 +182,7 @@ gymbro/
 - `docs/database.md`: modelo de datos.
 - `docs/decisions/`: decisiones técnicas relevantes.
 - `AGENTS.md`: instrucciones para Codex y otros agentes.
-- `CONTRIBUTING.md`: reglas para ramas, commits y pull requests.
+- `CONTRIBUTING.MD`: reglas para ramas, commits y pull requests.
 
 ## Flujo de trabajo
 
