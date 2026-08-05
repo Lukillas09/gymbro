@@ -88,6 +88,8 @@ Antes de terminar una tarea, ejecutar:
 npm run format:check
 npm run lint
 npm run typecheck
+npm run test:run
+npm run test:e2e
 npm run build
 
 # 16. Crear la documentación inicial
