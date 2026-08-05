@@ -122,6 +122,38 @@ Comprobar los tipos de TypeScript:
 npm run typecheck
 ```
 
+Ejecutar pruebas unitarias y de componentes una vez:
+
+```bash
+npm run test:run
+```
+
+Ejecutar pruebas unitarias en modo interactivo:
+
+```bash
+npm run test
+npm run test:watch
+```
+
+Ejecutar pruebas end-to-end:
+
+```bash
+npm run test:e2e
+```
+
+Abrir la interfaz de Playwright:
+
+```bash
+npm run test:e2e:ui
+```
+
+La primera ejecución local de Playwright requiere instalar Chromium fuera del
+repositorio:
+
+```bash
+npx playwright install chromium
+```
+
 Formatear los archivos:
 
 ```bash
@@ -166,12 +198,16 @@ gymbro/
 ├── supabase/
 │   └── migrations/
 ├── tests/
-│   └── e2e/
+│   ├── e2e/
+│   ├── setup/
+│   └── unit/
 ├── .env.example
 ├── AGENTS.md
-├── CONTRIBUTING.MD
+├── CONTRIBUTING.md
+├── playwright.config.ts
 ├── README.md
-└── package.json
+├── package.json
+└── vitest.config.mts
 ```
 
 ## Documentación
@@ -182,7 +218,7 @@ gymbro/
 - `docs/database.md`: modelo de datos.
 - `docs/decisions/`: decisiones técnicas relevantes.
 - `AGENTS.md`: instrucciones para Codex y otros agentes.
-- `CONTRIBUTING.MD`: reglas para ramas, commits y pull requests.
+- `CONTRIBUTING.md`: reglas para ramas, commits y pull requests.
 
 ## Flujo de trabajo
 

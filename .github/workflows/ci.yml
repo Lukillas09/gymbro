@@ -40,5 +40,14 @@ jobs:
       - name: Check TypeScript
         run: npm run typecheck
 
+      - name: Run unit and component tests
+        run: npm run test:run
+
       - name: Build application
         run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run end-to-end tests
+        run: npm run test:e2e:ci

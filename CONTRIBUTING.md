@@ -60,6 +60,7 @@ Ejecutar:
 npm run format:check
 npm run lint
 npm run typecheck
+npm run test:run
 npm run build
 ```
 
@@ -73,6 +74,13 @@ Si PowerShell bloquea `npm.ps1`, utilizar:
 
 ```powershell
 npm.cmd run check
+```
+
+Los cambios que afecten rutas, navegación o flujos visibles también deben
+ejecutar:
+
+```bash
+npm run test:e2e
 ```
 
 ## Pull requests
