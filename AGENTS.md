@@ -79,6 +79,22 @@ Los componentes visuales no deben contener reglas de negocio complejas.
 - No modificar manualmente producción.
 - Agregar restricciones cuando una regla pueda garantizarse en PostgreSQL.
 - Mantener documentación del esquema actualizada.
+- Ejecutar `npm run supabase:reset` y `npm run supabase:test` para cambios SQL
+  cuando Docker esté disponible.
+- Regenerar `src/types/database.generated.ts` con `npm run supabase:types` en local
+  o `npm run supabase:types:remote` después de aplicar migraciones al proyecto de
+  desarrollo vinculado.
+- Las validaciones normales y CI no dependen de Supabase remoto.
+- Los comandos `--linked` sólo se usan mediante el flujo manual documentado para
+  un proyecto descartable y exclusivo de desarrollo.
+- Ejecutar siempre `supabase:remote:dry-run` y revisar las migraciones antes de
+  cualquier push remoto.
+- Nunca ejecutar `db reset --linked` ni apuntar desarrollo a producción.
+- No modificar el esquema manualmente desde Dashboard: las migraciones son la
+  única fuente de verdad.
+- No afirmar que pgTAP pasó si no se ejecutó con un entorno local compatible con
+  contenedores.
+- No editar manualmente los tipos generados desde PostgreSQL.
 
 ## Calidad
 
