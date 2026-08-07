@@ -7,6 +7,9 @@ import {
 describe("redirecciones de autenticación", () => {
   it("conserva destinos privados internos", () => {
     expect(resolveSafeRedirect("/workout?resume=1")).toBe("/workout?resume=1");
+    expect(resolveSafeRedirect("/exercises/barbell-bench-press")).toBe(
+      "/exercises/barbell-bench-press",
+    );
   });
 
   it("rechaza URLs externas y rutas públicas", () => {

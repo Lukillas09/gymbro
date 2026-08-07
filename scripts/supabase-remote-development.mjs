@@ -4,8 +4,10 @@ import path from "node:path";
 
 const operation = process.argv[2];
 
-if (operation !== "push" && operation !== "seed") {
-  throw new Error("Remote development operation must be push or seed.");
+if (!["push", "seed", "test-workouts"].includes(operation)) {
+  throw new Error(
+    "Remote development operation must be push, seed, or test-workouts.",
+  );
 }
 
 if (process.env.GYMBRO_SUPABASE_TARGET !== "development") {
@@ -14,7 +16,10 @@ if (process.env.GYMBRO_SUPABASE_TARGET !== "development") {
   );
 }
 
-if (process.env.GYMBRO_SUPABASE_DRY_RUN_REVIEWED !== "yes") {
+if (
+  operation !== "test-workouts" &&
+  process.env.GYMBRO_SUPABASE_DRY_RUN_REVIEWED !== "yes"
+) {
   throw new Error(
     "Run and review supabase:remote:dry-run, then set GYMBRO_SUPABASE_DRY_RUN_REVIEWED=yes.",
   );
@@ -55,7 +60,16 @@ const cliPath = path.join(
   "dist",
   "supabase.js",
 );
-const argumentsForCli = ["db", "push", "--linked"];
+const argumentsForCli =
+  operation === "test-workouts"
+    ? [
+        "db",
+        "query",
+        "--linked",
+        "--file",
+        path.join(root, "supabase", "tests", "remote", "workout-rls.sql"),
+      ]
+    : ["db", "push", "--linked"];
 
 if (operation === "seed") {
   argumentsForCli.push("--include-seed");

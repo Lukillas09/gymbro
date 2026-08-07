@@ -31,7 +31,18 @@ Permite:
 - elegir la rutina activa.
 
 La biblioteca de ejercicios se abre como parte del flujo de agregar un ejercicio
-y no necesita un destino principal propio.
+y no necesita un destino principal propio. Mientras no existen rutinas, el
+estado vacío ofrece `Explorar ejercicios` hacia `/exercises`; la ficha de detalle
+vive en `/exercises/[slug]` y conserva la navegación principal.
+
+Las rutas secundarias del dominio son:
+
+- `/routines/new`: nombre y objetivo inicial;
+- `/routines/[id]`: plan completo y resumen muscular;
+- `/routines/[id]/edit`: días, prescripciones, orden y selección desde catálogo.
+
+El editor usa controles explícitos para subir y bajar elementos. No depende de
+drag-and-drop y no ofrece todavía iniciar un entrenamiento.
 
 ### Entrenar
 
@@ -41,6 +52,11 @@ Es el acceso directo a la ejecución:
 - si no existe, muestra el día sugerido y permite elegir otro día de una rutina;
 - después de elegir un día, permite iniciar el entrenamiento;
 - durante la sesión, concentra series, repeticiones, peso y descanso.
+
+`/workout` mantiene la navegación principal mientras se elige el día.
+`/workout/[id]` es la experiencia LIVE: reduce el chrome global, muestra
+duración y progreso, y permite abrir una lista compacta para cambiar de ejercicio
+sin alterar la rutina.
 
 ### Progreso
 
@@ -83,7 +99,7 @@ servidor además del Proxy para evitar loops y depender de una sola barrera.
 3. El usuario inicia el día sugerido o abre `Entrenar` para elegir otro.
 4. GymBro crea una sesión activa con una copia del plan del día.
 5. El usuario completa series y registra repeticiones y peso.
-6. Entre series, inicia o ajusta el temporizador de descanso.
+6. Completar una serie inicia descanso; puede extenderse 15 segundos o saltarse.
 7. Cada cambio confirmado se persiste y puede recuperarse después de recargar.
 8. El usuario revisa el resumen y confirma la finalización.
 9. La sesión pasa al historial y actualiza calendario, evolución y récords.
@@ -105,6 +121,8 @@ El usuario puede cambiar de día antes de crear la sesión.
 
 La sesión es prioritaria y permanece accesible desde `Inicio` y `Entrenar`.
 Navegar a otras secciones no la finaliza ni descarta.
+El ejercicio activo puede cambiarse si otro equipo está ocupado; el orden del
+snapshot permanece intacto.
 
 ### Sesión recuperada
 

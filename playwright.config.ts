@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 const port = 3100;
 const baseURL = `http://127.0.0.1:${port}`;
+const mockSupabaseURL = "http://127.0.0.1:3201";
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -15,12 +16,24 @@ export default defineConfig({
     screenshot: "only-on-failure",
     trace: "on-first-retry",
   },
-  webServer: {
-    command: `npm run start -- -H 127.0.0.1 -p ${port}`,
-    url: baseURL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  webServer: [
+    {
+      command: "node tests/e2e/support/mock-supabase.mjs",
+      url: mockSupabaseURL,
+      reuseExistingServer: !process.env.CI,
+      timeout: 30_000,
+    },
+    {
+      command: `npm run start -- -H 127.0.0.1 -p ${port}`,
+      env: {
+        NEXT_PUBLIC_SUPABASE_URL: mockSupabaseURL,
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "gymbro-e2e-public-key",
+      },
+      url: baseURL,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+  ],
   projects: [
     {
       name: "mobile-chromium",
