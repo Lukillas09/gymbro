@@ -18,17 +18,17 @@ export type Database = {
         Row: {
           exercise_id: string;
           involvement_type: Database["public"]["Enums"]["muscle_involvement"];
-          muscle_group_id: string;
+          muscle_id: string;
         };
         Insert: {
           exercise_id: string;
           involvement_type: Database["public"]["Enums"]["muscle_involvement"];
-          muscle_group_id: string;
+          muscle_id: string;
         };
         Update: {
           exercise_id?: string;
           involvement_type?: Database["public"]["Enums"]["muscle_involvement"];
-          muscle_group_id?: string;
+          muscle_id?: string;
         };
         Relationships: [
           {
@@ -39,10 +39,10 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "exercise_muscles_muscle_group_id_fkey";
-            columns: ["muscle_group_id"];
+            foreignKeyName: "exercise_muscles_muscle_id_fkey";
+            columns: ["muscle_id"];
             isOneToOne: false;
-            referencedRelation: "muscle_groups";
+            referencedRelation: "muscles";
             referencedColumns: ["id"];
           },
         ];
@@ -97,27 +97,59 @@ export type Database = {
       };
       muscle_groups: {
         Row: {
-          body_region: Database["public"]["Enums"]["body_region"];
           created_at: string;
           id: string;
           name: string;
           slug: string;
         };
         Insert: {
-          body_region: Database["public"]["Enums"]["body_region"];
           created_at?: string;
           id?: string;
           name: string;
           slug: string;
         };
         Update: {
-          body_region?: Database["public"]["Enums"]["body_region"];
           created_at?: string;
           id?: string;
           name?: string;
           slug?: string;
         };
         Relationships: [];
+      };
+      muscles: {
+        Row: {
+          created_at: string;
+          id: string;
+          muscle_group_id: string;
+          name: string;
+          slug: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          muscle_group_id: string;
+          name: string;
+          slug: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          muscle_group_id?: string;
+          name?: string;
+          slug?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "muscles_muscle_group_id_fkey";
+            columns: ["muscle_group_id"];
+            isOneToOne: false;
+            referencedRelation: "muscle_groups";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       profiles: {
         Row: {
@@ -462,7 +494,6 @@ export type Database = {
     };
     Enums: {
       biological_sex: "female" | "male" | "intersex" | "prefer_not_to_say";
-      body_region: "upper_body" | "lower_body" | "core";
       exercise_difficulty: "beginner" | "intermediate" | "advanced";
       muscle_involvement: "primary" | "secondary" | "stabilizer";
       training_goal: "muscle_gain" | "strength" | "general_fitness";
@@ -598,7 +629,6 @@ export const Constants = {
   public: {
     Enums: {
       biological_sex: ["female", "male", "intersex", "prefer_not_to_say"],
-      body_region: ["upper_body", "lower_body", "core"],
       exercise_difficulty: ["beginner", "intermediate", "advanced"],
       muscle_involvement: ["primary", "secondary", "stabilizer"],
       training_goal: ["muscle_gain", "strength", "general_fitness"],
