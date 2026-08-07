@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { AppNavigation } from "./app-navigation";
 
@@ -7,6 +10,25 @@ type AppShellProps = Readonly<{
 }>;
 
 export function AppShell({ children }: AppShellProps) {
+  const pathname = usePathname();
+  const isTrainingMode = pathname.startsWith("/workout/");
+
+  if (isTrainingMode) {
+    return (
+      <div className="min-h-dvh bg-[#090b09]">
+        <a
+          className="fixed top-3 left-3 z-[60] -translate-y-20 rounded-md bg-[#f4cf3a] px-4 py-3 text-sm font-bold text-[#11120f] focus:translate-y-0"
+          href="#main-content"
+        >
+          Saltar al contenido
+        </a>
+        <div id="main-content" tabIndex={-1}>
+          {children}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-dvh bg-[#0b0d0b] lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
       <a

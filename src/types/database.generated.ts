@@ -14,6 +14,63 @@ export type Database = {
   };
   public: {
     Tables: {
+      equipment: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+          slug: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name: string;
+          slug: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+          slug?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      exercise_equipment: {
+        Row: {
+          equipment_id: string;
+          exercise_id: string;
+          position: number;
+        };
+        Insert: {
+          equipment_id: string;
+          exercise_id: string;
+          position: number;
+        };
+        Update: {
+          equipment_id?: string;
+          exercise_id?: string;
+          position?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "exercise_equipment_equipment_id_fkey";
+            columns: ["equipment_id"];
+            isOneToOne: false;
+            referencedRelation: "equipment";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "exercise_equipment_exercise_id_fkey";
+            columns: ["exercise_id"];
+            isOneToOne: false;
+            referencedRelation: "exercises";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       exercise_muscles: {
         Row: {
           exercise_id: string;
@@ -49,46 +106,49 @@ export type Database = {
       };
       exercises: {
         Row: {
-          common_mistakes: string | null;
+          common_mistakes: string[];
           created_at: string;
           created_by: string | null;
           description: string | null;
           difficulty: Database["public"]["Enums"]["exercise_difficulty"];
-          equipment: string;
           id: string;
           image_url: string | null;
-          instructions: string | null;
+          instructions: string[];
           is_custom: boolean;
+          movement_pattern:
+            Database["public"]["Enums"]["movement_pattern"] | null;
           name: string;
           slug: string;
           updated_at: string;
         };
         Insert: {
-          common_mistakes?: string | null;
+          common_mistakes?: string[];
           created_at?: string;
           created_by?: string | null;
           description?: string | null;
           difficulty: Database["public"]["Enums"]["exercise_difficulty"];
-          equipment: string;
           id?: string;
           image_url?: string | null;
-          instructions?: string | null;
+          instructions?: string[];
           is_custom?: boolean;
+          movement_pattern?:
+            Database["public"]["Enums"]["movement_pattern"] | null;
           name: string;
           slug: string;
           updated_at?: string;
         };
         Update: {
-          common_mistakes?: string | null;
+          common_mistakes?: string[];
           created_at?: string;
           created_by?: string | null;
           description?: string | null;
           difficulty?: Database["public"]["Enums"]["exercise_difficulty"];
-          equipment?: string;
           id?: string;
           image_url?: string | null;
-          instructions?: string | null;
+          instructions?: string[];
           is_custom?: boolean;
+          movement_pattern?:
+            Database["public"]["Enums"]["movement_pattern"] | null;
           name?: string;
           slug?: string;
           updated_at?: string;
@@ -248,6 +308,7 @@ export type Database = {
           routine_day_id: string;
           target_reps_max: number;
           target_reps_min: number;
+          target_rir: number | null;
           target_sets: number;
           updated_at: string;
         };
@@ -261,6 +322,7 @@ export type Database = {
           routine_day_id: string;
           target_reps_max: number;
           target_reps_min: number;
+          target_rir?: number | null;
           target_sets: number;
           updated_at?: string;
         };
@@ -274,6 +336,7 @@ export type Database = {
           routine_day_id?: string;
           target_reps_max?: number;
           target_reps_min?: number;
+          target_rir?: number | null;
           target_sets?: number;
           updated_at?: string;
         };
@@ -334,6 +397,7 @@ export type Database = {
         Row: {
           created_at: string;
           exercise_id: string;
+          exercise_name_snapshot: string;
           id: string;
           notes: string | null;
           position: number;
@@ -341,12 +405,14 @@ export type Database = {
           source_routine_exercise_id: string | null;
           target_reps_max: number;
           target_reps_min: number;
+          target_rir: number | null;
           target_sets: number;
           workout_session_id: string;
         };
         Insert: {
           created_at?: string;
           exercise_id: string;
+          exercise_name_snapshot: string;
           id?: string;
           notes?: string | null;
           position: number;
@@ -354,12 +420,14 @@ export type Database = {
           source_routine_exercise_id?: string | null;
           target_reps_max: number;
           target_reps_min: number;
+          target_rir?: number | null;
           target_sets: number;
           workout_session_id: string;
         };
         Update: {
           created_at?: string;
           exercise_id?: string;
+          exercise_name_snapshot?: string;
           id?: string;
           notes?: string | null;
           position?: number;
@@ -367,6 +435,7 @@ export type Database = {
           source_routine_exercise_id?: string | null;
           target_reps_max?: number;
           target_reps_min?: number;
+          target_rir?: number | null;
           target_sets?: number;
           workout_session_id?: string;
         };
@@ -396,39 +465,71 @@ export type Database = {
       };
       workout_sessions: {
         Row: {
+          active_workout_exercise_id: string | null;
           completed_at: string | null;
           created_at: string;
           id: string;
           notes: string | null;
+          rest_ends_at: string | null;
+          rest_source_set_id: string | null;
           routine_day_id: string | null;
+          routine_day_name_snapshot: string;
+          routine_name_snapshot: string;
+          snapshot_locked_at: string | null;
           started_at: string;
           status: Database["public"]["Enums"]["workout_status"];
           updated_at: string;
           user_id: string;
         };
         Insert: {
+          active_workout_exercise_id?: string | null;
           completed_at?: string | null;
           created_at?: string;
           id?: string;
           notes?: string | null;
+          rest_ends_at?: string | null;
+          rest_source_set_id?: string | null;
           routine_day_id?: string | null;
+          routine_day_name_snapshot: string;
+          routine_name_snapshot: string;
+          snapshot_locked_at?: string | null;
           started_at?: string;
           status?: Database["public"]["Enums"]["workout_status"];
           updated_at?: string;
           user_id: string;
         };
         Update: {
+          active_workout_exercise_id?: string | null;
           completed_at?: string | null;
           created_at?: string;
           id?: string;
           notes?: string | null;
+          rest_ends_at?: string | null;
+          rest_source_set_id?: string | null;
           routine_day_id?: string | null;
+          routine_day_name_snapshot?: string;
+          routine_name_snapshot?: string;
+          snapshot_locked_at?: string | null;
           started_at?: string;
           status?: Database["public"]["Enums"]["workout_status"];
           updated_at?: string;
           user_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "workout_sessions_active_exercise_fk";
+            columns: ["active_workout_exercise_id"];
+            isOneToOne: false;
+            referencedRelation: "workout_exercises";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "workout_sessions_rest_source_set_fk";
+            columns: ["rest_source_set_id"];
+            isOneToOne: false;
+            referencedRelation: "workout_sets";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "workout_sessions_routine_day_id_fkey";
             columns: ["routine_day_id"];
@@ -440,7 +541,7 @@ export type Database = {
       };
       workout_sets: {
         Row: {
-          completed_at: string | null;
+          completed_at: string;
           created_at: string;
           id: string;
           repetitions: number;
@@ -452,7 +553,7 @@ export type Database = {
           workout_exercise_id: string;
         };
         Insert: {
-          completed_at?: string | null;
+          completed_at?: string;
           created_at?: string;
           id?: string;
           repetitions: number;
@@ -464,7 +565,7 @@ export type Database = {
           workout_exercise_id: string;
         };
         Update: {
-          completed_at?: string | null;
+          completed_at?: string;
           created_at?: string;
           id?: string;
           repetitions?: number;
@@ -490,11 +591,122 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      activate_routine: {
+        Args: { target_routine_id: string };
+        Returns: undefined;
+      };
+      append_routine_day: {
+        Args: { day_name: string; target_routine_id: string };
+        Returns: string;
+      };
+      append_routine_exercise: {
+        Args: {
+          target_day_id: string;
+          target_exercise_id: string;
+          target_reps_max: number;
+          target_reps_min: number;
+          target_rest_seconds: number;
+          target_rir?: number;
+          target_sets: number;
+        };
+        Returns: string;
+      };
+      complete_workout_set: {
+        Args: {
+          target_repetitions: number;
+          target_rir?: number;
+          target_set_number: number;
+          target_set_type?: Database["public"]["Enums"]["workout_set_type"];
+          target_weight_kg: number;
+          target_workout_exercise_id: string;
+        };
+        Returns: {
+          active_workout_exercise_id: string;
+          completed_at: string;
+          inserted: boolean;
+          repetitions: number;
+          rest_ends_at: string;
+          rir: number;
+          set_number: number;
+          set_type: Database["public"]["Enums"]["workout_set_type"];
+          weight_kg: number;
+          workout_set_id: string;
+        }[];
+      };
+      duplicate_routine_day: {
+        Args: { source_day_id: string };
+        Returns: string;
+      };
+      extend_workout_rest: {
+        Args: { extension_seconds?: number; target_workout_session_id: string };
+        Returns: string;
+      };
+      finish_workout: {
+        Args: { target_workout_session_id: string };
+        Returns: string;
+      };
+      reorder_routine_days: {
+        Args: { ordered_day_ids: string[]; target_routine_id: string };
+        Returns: undefined;
+      };
+      reorder_routine_exercises: {
+        Args: { ordered_routine_exercise_ids: string[]; target_day_id: string };
+        Returns: undefined;
+      };
+      select_workout_exercise: {
+        Args: {
+          target_workout_exercise_id: string;
+          target_workout_session_id: string;
+        };
+        Returns: undefined;
+      };
+      skip_workout_rest: {
+        Args: { target_workout_session_id: string };
+        Returns: undefined;
+      };
+      start_workout: {
+        Args: { target_routine_day_id: string };
+        Returns: string;
+      };
+      undo_last_workout_set: {
+        Args: {
+          target_workout_session_id: string;
+          target_workout_set_id: string;
+        };
+        Returns: {
+          active_workout_exercise_id: string;
+          rest_ends_at: string;
+          set_number: number;
+          workout_exercise_id: string;
+        }[];
+      };
     };
     Enums: {
       biological_sex: "female" | "male" | "intersex" | "prefer_not_to_say";
       exercise_difficulty: "beginner" | "intermediate" | "advanced";
+      movement_pattern:
+        | "horizontal_push"
+        | "vertical_push"
+        | "horizontal_pull"
+        | "vertical_pull"
+        | "squat"
+        | "hip_hinge"
+        | "lunge"
+        | "knee_extension"
+        | "knee_flexion"
+        | "elbow_flexion"
+        | "elbow_extension"
+        | "shoulder_abduction"
+        | "shoulder_flexion"
+        | "shoulder_extension"
+        | "chest_fly"
+        | "reverse_fly"
+        | "hip_abduction"
+        | "hip_adduction"
+        | "calf_raise"
+        | "core_flexion"
+        | "core_rotation"
+        | "core_stability";
       muscle_involvement: "primary" | "secondary" | "stabilizer";
       training_goal: "muscle_gain" | "strength" | "general_fitness";
       training_level: "beginner" | "intermediate" | "advanced";
@@ -630,6 +842,30 @@ export const Constants = {
     Enums: {
       biological_sex: ["female", "male", "intersex", "prefer_not_to_say"],
       exercise_difficulty: ["beginner", "intermediate", "advanced"],
+      movement_pattern: [
+        "horizontal_push",
+        "vertical_push",
+        "horizontal_pull",
+        "vertical_pull",
+        "squat",
+        "hip_hinge",
+        "lunge",
+        "knee_extension",
+        "knee_flexion",
+        "elbow_flexion",
+        "elbow_extension",
+        "shoulder_abduction",
+        "shoulder_flexion",
+        "shoulder_extension",
+        "chest_fly",
+        "reverse_fly",
+        "hip_abduction",
+        "hip_adduction",
+        "calf_raise",
+        "core_flexion",
+        "core_rotation",
+        "core_stability",
+      ],
       muscle_involvement: ["primary", "secondary", "stabilizer"],
       training_goal: ["muscle_gain", "strength", "general_fitness"],
       training_level: ["beginner", "intermediate", "advanced"],

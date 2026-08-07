@@ -36,30 +36,33 @@ criterios definidos en [`mvp.md`](mvp.md) y no incorporar funciones post-MVP.
 
 ## Fase 2 — Biblioteca de ejercicios
 
-- [ ] Implementar el modelo y la carga inicial del catálogo.
+- [x] Implementar el modelo y la carga inicial del catálogo.
 - [x] Incorporar la taxonomía base de macrogrupos y músculos específicos.
-- [ ] Incorporar equipamiento.
-- [ ] Crear listado, búsqueda y filtros.
-- [ ] Crear el detalle básico necesario para seleccionar ejercicios.
-- [ ] Verificar estados de carga, error y catálogo vacío.
+- [x] Incorporar equipamiento normalizado y patrones de movimiento.
+- [x] Crear listado, búsqueda y filtros combinables.
+- [x] Crear el detalle básico necesario para seleccionar ejercicios.
+- [x] Verificar estados de carga, error y catálogo vacío.
 
 ## Fase 3 — Rutinas
 
-- [ ] Crear y editar rutinas.
-- [ ] Crear, editar y ordenar días.
-- [ ] Agregar y ordenar ejercicios desde la biblioteca.
-- [ ] Configurar series y repeticiones objetivo.
-- [ ] Activar una única rutina y resolver el próximo día sugerido.
-- [ ] Garantizar que los cambios no alteren sesiones existentes.
+- [x] Crear, editar y eliminar rutinas.
+- [x] Crear, editar, duplicar y ordenar días.
+- [x] Agregar y ordenar ejercicios desde la biblioteca.
+- [x] Configurar series, repeticiones, descanso y RIR objetivo.
+- [x] Activar una única rutina de forma atómica.
+- [x] Mantener prescripción y resultados de entrenamiento como conceptos
+      separados.
+- [ ] Resolver el próximo día sugerido a partir de sesiones finalizadas.
 
 ## Fase 4 — Entrenamiento
 
-- [ ] Iniciar una única sesión activa desde un día de rutina.
-- [ ] Capturar una copia estable del plan.
-- [ ] Registrar y corregir series, repeticiones y peso.
-- [ ] Implementar el temporizador de descanso.
-- [ ] Persistir y recuperar la sesión después de recargar.
-- [ ] Finalizar la sesión con confirmación.
+- [x] Iniciar una única sesión activa desde un día de rutina.
+- [x] Capturar y bloquear una copia estable del plan.
+- [x] Registrar series, repeticiones y peso con idempotencia y Undo inmediato.
+- [x] Implementar descanso persistente con extensión y salto.
+- [x] Persistir y recuperar sesión, ejercicio y progreso después de recargar.
+- [x] Permitir cambiar de ejercicio sin modificar el orden de rutina.
+- [x] Finalizar la sesión con confirmación contextual y resumen factual.
 
 ## Fase 5 — Historial y progreso
 

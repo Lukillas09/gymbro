@@ -45,9 +45,15 @@ jobs:
 
       - name: Build application
         run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:3201
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: gymbro-e2e-public-key
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
       - name: Run end-to-end tests
         run: npm run test:e2e:ci
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:3201
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: gymbro-e2e-public-key

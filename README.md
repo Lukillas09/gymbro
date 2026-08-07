@@ -10,8 +10,13 @@ El proyecto se encuentra en la fase de fundamentos funcionales del MVP.
 
 Actualmente están implementados el shell mobile-first, la fundación PostgreSQL,
 la autenticación por correo y contraseña, el onboarding y la protección de
-rutas. La taxonomía muscular de dos niveles prepara la biblioteca de ejercicios,
-que continúa siendo la próxima fase funcional.
+rutas. La biblioteca inicial permite explorar 73 ejercicios oficiales, buscar,
+filtrar y consultar su técnica, músculos y equipamiento. El constructor de
+rutinas permite crear planes, ordenar días y ejercicios, definir prescripciones,
+duplicar días, activar una rutina y revisar su distribución muscular. El modo
+Entrenar permite elegir un día activo, registrar series con prefill, recuperar
+la sesión tras recargar, controlar descansos persistentes, cambiar de ejercicio,
+deshacer la última serie y finalizar con un resumen factual.
 
 ## Funcionalidades planificadas
 
@@ -161,6 +166,55 @@ Esta es una taxonomía funcional para una aplicación de entrenamiento, no una
 clasificación anatómica académica completa. Antebrazos se agrupa bajo Bíceps por
 una decisión de navegación simplificada del producto.
 
+## Biblioteca de ejercicios
+
+La ruta privada `/exercises` presenta el catálogo oficial con búsqueda por
+nombre y filtros combinables por macrogrupo, músculo específico y equipamiento.
+Cada detalle muestra dificultad, patrón de movimiento, todo el equipamiento
+requerido, participación muscular, pasos de técnica y errores comunes.
+
+El catálogo versionado contiene 73 ejercicios y 14 elementos de equipamiento.
+Un filtro de equipamiento significa que el ejercicio incluye ese elemento entre
+sus requisitos; la ficha siempre muestra el conjunto completo. Rutinas ofrece el
+acceso `Explorar ejercicios` sin agregar una sexta pestaña principal.
+
+`movement_pattern`, `exercise_muscles` y `exercise_equipment` forman una base
+tipada para sustituciones y generación de rutinas futuras. Esas funciones no se
+implementan en esta fase.
+
+## Rutinas
+
+La ruta privada `/routines` separa la rutina activa de las demás y permite crear
+una nueva desde `/routines/new`. La vista `/routines/[id]` presenta el plan y un
+resumen de series objetivo asociadas a músculos `primary`; el editor
+`/routines/[id]/edit` administra días, ejercicios y orden sin depender de
+drag-and-drop.
+
+Cada prescripción conserva series, rango de repeticiones, descanso y RIR objetivo
+opcional. El mismo ejercicio puede aparecer en días distintos, pero no dos veces
+en el mismo día. Activación, duplicado y reordenamiento usan funciones PostgreSQL
+atómicas bajo la sesión autenticada y RLS.
+
+Una prescripción como `4 × 8–10, descanso 120 s, RIR 2` no representa un
+resultado realizado. Peso, repeticiones completadas y RIR real pertenecerán a
+`workout_sets`; los entrenamientos ya iniciados conservan una copia estable del
+plan aunque posteriormente cambie o se archive la rutina.
+
+## Modo Entrenar
+
+`/workout` recupera automáticamente una sesión activa o permite elegir un día
+de la rutina activa. `/workout/[id]` reduce la navegación global y concentra
+ejercicio, serie, peso, repeticiones y descanso en una experiencia LIVE.
+
+Iniciar es idempotente y captura nombres, orden y objetivos. Completar una serie
+persiste el resultado antes de mostrarlo, inicia descanso mediante un timestamp
+absoluto y evita duplicados por ejercicio y número de serie. `+15 s`, `Saltar`,
+cambio de ejercicio y Undo también se guardan mediante RPCs transaccionales.
+
+La referencia `Última vez`, el prefill y mejoras como `+1 REP` se derivan de
+sesiones completadas reales. No se generan recomendaciones, PRs, Session
+Capsules ni puntuaciones opacas en esta fase.
+
 ## Supabase local
 
 El CLI se instala como dependencia de desarrollo. Con Docker activo, iniciar la
@@ -243,16 +297,23 @@ tokens ni las variables transitorias en el repositorio o `.env.example`.
 ### Estado verificado de la fundación remota
 
 El proyecto remoto exclusivo de desarrollo está vinculado y su historial
-coincide con las tres migraciones versionadas. El dry-run no informa cambios
+coincide con las nueve migraciones versionadas. El dry-run no informa cambios
 pendientes. El seed protegido fue aplicado y una consulta de sólo lectura
-confirmó 7 macrogrupos, 26 músculos específicos, slugs únicos y ausencia de
-relaciones huérfanas.
+confirmó 7 macrogrupos, 26 músculos específicos, 73 ejercicios, 14 elementos de
+equipamiento y ausencia de duplicados, relaciones huérfanas o ejercicios
+oficiales incompletos.
 
 La validación auth remota confirmó un registro real con email pendiente de
 confirmación, la creación automática de `profiles` y el aislamiento RLS entre
 dos usuarios controlados. Los datos se eliminaron al finalizar.
 
 `src/types/database.generated.ts` fue generado desde ese esquema remoto real.
+Una prueba transaccional opt-in comprobó creación, activación única, duplicado,
+reordenamiento y aislamiento RLS de rutinas entre dos usuarios; todos sus datos
+se revirtieron al finalizar.
+Otra prueba transaccional verificó inicio idempotente, snapshot, series,
+descanso, finalización y aislamiento RLS de workouts; también terminó con
+`ROLLBACK` y sin residuos.
 Esta validación temporal no reemplaza Supabase local: `supabase:reset` y las
 pruebas pgTAP siguen pendientes hasta disponer de un runtime compatible con
 contenedores.
@@ -310,6 +371,24 @@ Ejecutar pruebas end-to-end:
 ```bash
 npm run test:e2e
 ```
+
+Playwright usa un mock local y efímero de los endpoints mínimos de Supabase para
+probar login SSR, la biblioteca y el constructor de rutinas sin credenciales ni
+red remota. Cada login de prueba mantiene datos aislados y efímeros. Este mock
+sólo se inicia desde la configuración E2E, no demuestra RLS y no participa de la
+aplicación desplegada.
+
+La validación remota de workouts es manual, permanece fuera de CI y exige el
+destino de desarrollo y el project ref vinculado:
+
+```powershell
+$env:GYMBRO_SUPABASE_TARGET="development"
+$env:GYMBRO_SUPABASE_DEV_PROJECT_REF="<PROJECT_REF>"
+npm run supabase:remote:test:workouts
+```
+
+El SQL crea únicamente datos controlados dentro de una transacción y ejecuta
+`ROLLBACK`. Nunca debe apuntarse a producción.
 
 Abrir la interfaz de Playwright:
 
