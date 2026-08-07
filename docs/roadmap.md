@@ -27,6 +27,8 @@ criterios definidos en [`mvp.md`](mvp.md) y no incorporar funciones post-MVP.
       desarrollo.
 - [x] Validar funcionalmente el trigger de perfiles y el aislamiento RLS básico
       mediante una prueba remota opt-in con cleanup.
+- [x] Separar macrogrupos y músculos específicos antes de construir la biblioteca
+      de ejercicios.
 - [x] Configurar pruebas unitarias, de componentes, end-to-end y CI.
 - [ ] Validar reset, seed y pruebas pgTAP con Supabase local cuando exista un
       runtime compatible con contenedores.
@@ -35,7 +37,8 @@ criterios definidos en [`mvp.md`](mvp.md) y no incorporar funciones post-MVP.
 ## Fase 2 — Biblioteca de ejercicios
 
 - [ ] Implementar el modelo y la carga inicial del catálogo.
-- [ ] Incorporar grupos musculares y equipamiento.
+- [x] Incorporar la taxonomía base de macrogrupos y músculos específicos.
+- [ ] Incorporar equipamiento.
 - [ ] Crear listado, búsqueda y filtros.
 - [ ] Crear el detalle básico necesario para seleccionar ejercicios.
 - [ ] Verificar estados de carga, error y catálogo vacío.

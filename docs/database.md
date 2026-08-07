@@ -22,9 +22,12 @@ el volumen del MVP.
 ### Enums y checks
 
 Los vocabularios cerrados y usados como reglas de dominio son enums PostgreSQL:
-nivel, objetivo, unidad preferida, región corporal, dificultad, participación
-muscular, estado de sesión y tipo de serie. Incorporar un valor nuevo requiere
-una migración explícita.
+nivel, objetivo, unidad preferida, dificultad, participación muscular, estado de
+sesión y tipo de serie. Incorporar un valor nuevo requiere una migración
+explícita.
+
+`body_region` se eliminó junto con su columna porque repetía una agrupación que
+ya resuelven los siete macrogrupos y no tenía otro consumidor.
 
 Los rangos, formatos y coherencia entre columnas usan restricciones `CHECK`.
 Entre ellas se validan username, posiciones, series, repeticiones, peso, RIR,
@@ -32,9 +35,10 @@ descanso y relación entre estado y finalización de una sesión.
 
 ### Fechas de actualización
 
-Las tablas editables tienen `created_at` y `updated_at`. Un trigger común dentro
-del esquema privado `private` reemplaza `updated_at` en cada actualización, por
-lo que el cliente no controla esa marca temporal.
+Las tablas editables, incluida la administración del catálogo `muscles`, tienen
+`created_at` y `updated_at`. Un trigger común dentro del esquema privado
+`private` reemplaza `updated_at` en cada actualización, por lo que el cliente no
+controla esa marca temporal.
 
 ### Borrado y archivado
 
@@ -58,7 +62,7 @@ conversión de entrada y presentación; esa conversión pertenece a la aplicaci�
 Un ejercicio oficial tiene `is_custom = false` y `created_by = null`. Su slug es
 único globalmente y sólo el rol de servicio puede escribirlo. Un ejercicio
 personalizado tiene creador, slug único por propietario y es privado durante el
-MVP. El creador puede administrarlo y asociarle grupos musculares.
+MVP. El creador puede administrarlo y asociarle músculos específicos.
 
 La interfaz todavía no ofrece ejercicios personalizados. El esquema los deja
 preparados sin hacerlos públicos ni incorporarlos al alcance funcional actual.
@@ -95,8 +99,21 @@ Los datos físicos y personales son opcionales y privados.
 
 ### `muscle_groups`
 
-Catálogo oficial de grupos musculares con nombre, slug y región corporal. El
-seed idempotente incorpora pecho, espalda, hombros, brazos, piernas y core.
+Catálogo oficial de los siete macrogrupos visibles: Pecho, Espalda, Abdomen,
+Tríceps, Bíceps, Hombros y Piernas. Mantiene UUID, nombre, slug estable y fecha
+de creación. No almacena `body_region` porque esa columna duplicaba la nueva
+jerarquía sin aportar una consulta necesaria para el MVP.
+
+### `muscles`
+
+Catálogo oficial de 26 músculos o zonas de entrenamiento. Cada fila pertenece
+obligatoriamente a un macrogrupo mediante `muscle_group_id`; la FK con
+`ON DELETE RESTRICT`, el slug globalmente único y la unicidad de nombre dentro
+del macrogrupo impiden referencias huérfanas o duplicadas.
+
+Esta clasificación está diseñada para navegar y analizar entrenamientos, no para
+representar una taxonomía anatómica académica. Antebrazos se agrupa bajo Bíceps
+como simplificación funcional de producto.
 
 ### `exercises`
 
@@ -106,8 +123,29 @@ slugs oficiales son globales; los personalizados son únicos por creador.
 
 ### `exercise_muscles`
 
-Relación sin duplicados entre ejercicio y grupo muscular. La participación es
-`primary`, `secondary` o `stabilizer`.
+Relación sin duplicados entre ejercicio y músculo específico. La participación
+es `primary`, `secondary` o `stabilizer`. La clave primaria compuesta es
+`(exercise_id, muscle_id)` y no se guarda `muscle_group_id`: el macrogrupo se
+obtiene mediante `muscles`.
+
+### Transformación de la taxonomía anterior
+
+La tercera migración crea los siete macrogrupos y los 26 músculos antes de
+cambiar la FK. Si encuentra relaciones antiguas, conserva ejercicio y tipo de
+participación y traduce cada slug legado a una zona representativa:
+
+- pecho a Pectoral medio;
+- espalda a Dorsal ancho;
+- abdominales a Recto abdominal;
+- tríceps y bíceps a sus respectivas cabezas largas;
+- hombros a Deltoide lateral;
+- antebrazos, cuádriceps, isquiotibiales, glúteos, pantorrillas y zona lumbar a
+  sus zonas específicas equivalentes.
+
+Esa precisión es un fallback determinista porque el modelo anterior no guardaba
+porciones. La migración aborta si existe un grupo desconocido y nunca descarta
+una relación silenciosamente. En `gymbro-dev`, `exercises` y
+`exercise_muscles` estaban vacías antes de aplicarla.
 
 ### `routines`, `routine_days` y `routine_exercises`
 
@@ -148,10 +186,13 @@ recibe permisos sobre ellas.
   puede escribir identificadores ni marcas temporales.
 - `muscle_groups`: lectura para usuarios autenticados, sin escrituras del
   cliente ordinario.
+- `muscles`: lectura para usuarios autenticados, sin escrituras del cliente
+  ordinario.
 - `exercises`: lectura de oficiales y personalizados propios; sólo el creador
   puede escribir o eliminar un personalizado.
 - `exercise_muscles`: lectura según visibilidad del ejercicio; las escrituras se
-  limitan a ejercicios personalizados propios.
+  limitan a ejercicios personalizados propios y no permiten modificar el
+  catálogo de músculos.
 - `routines`: CRUD limitado por `user_id`.
 - `routine_days` y `routine_exercises`: la propiedad se comprueba recorriendo la
   rutina; también se valida que el ejercicio sea oficial o propio.
@@ -165,7 +206,7 @@ No existen políticas generales `USING (true)` para información privada. El rol
 navegador.
 
 En el proyecto remoto de desarrollo se comprobó mediante consultas de catálogo
-que las 10 tablas tienen RLS habilitado y existen las 35 políticas versionadas.
+que las 11 tablas tienen RLS habilitado y existen las 36 políticas versionadas.
 El asesor de seguridad de Supabase no informó problemas. Además, la prueba
 remota opt-in comprobó que dos usuarios bajo el rol `authenticated` sólo leen y
 actualizan su propio perfil. La preparación administrativa y el cleanup ocurren
@@ -196,12 +237,10 @@ proyecto remoto descartable de desarrollo se usa
 `npm run supabase:remote:seed:dev`, protegido por destino, coincidencia del ref
 vinculado y confirmación del dry-run. El seed nunca se aplica a producción.
 
-En el proyecto remoto de desarrollo vinculado, las dos migraciones están
-aplicadas y el dry-run no informa cambios pendientes. El wrapper aplicó el seed y
-una consulta de sólo lectura verificó exactamente 12 filas, 12 nombres únicos y
-12 slugs únicos con las regiones esperadas. Una segunda ejecución protegida no
-encontró cambios por aplicar y una consulta posterior confirmó el mismo
-resultado.
+En el proyecto remoto de desarrollo vinculado, las tres migraciones están
+aplicadas y el dry-run no informa cambios pendientes. El wrapper aplicó el seed
+y una consulta de sólo lectura verificó exactamente 7 macrogrupos, 26 músculos,
+slugs únicos y ninguna referencia huérfana o duplicada.
 
 Después de aplicar migraciones se generan los tipos desde la misma base validada:
 
@@ -215,8 +254,9 @@ Se ejecuta únicamente el comando correspondiente al modo activo. Ambos escriben
 reemplazarse por otra representación del esquema.
 
 La versión actual de ese archivo fue generada desde el proyecto remoto real,
-está codificada como UTF-8 sin BOM e incluye las 10 tablas y los 9 enums. La
-segunda migración sólo ajusta una restricción y no cambia los tipos expuestos.
+está codificada como UTF-8 sin BOM e incluye las 11 tablas y los 8 enums. La
+tercera migración incorpora `muscles`, reemplaza
+`exercise_muscles.muscle_group_id` por `muscle_id` y elimina `body_region`.
 
 Las pruebas pgTAP permanecen en `supabase/tests/database` y requieren Supabase
 local con contenedores. El proyecto remoto de desarrollo no sustituye esa suite.
@@ -226,6 +266,15 @@ local con contenedores. El proyecto remoto de desarrollo no sustituye esa suite.
 Historial, calendario, evolución por ejercicio y récords personales se calculan
 desde sesiones finalizadas y series completadas. No tienen tablas propias en
 esta fase.
+
+El volumen por músculo sigue `exercise_muscles -> muscles`; el volumen por
+macrogrupo agrega después `muscles -> muscle_groups`. Por ejemplo, Hip Thrust se
+asocia a Glúteos y deriva Piernas. Esto permite mostrar simultáneamente totales
+de Piernas y Glúteos sin guardar estadísticas redundantes.
+
+Una futura preferencia de prioridad muscular podrá referenciar `muscles.id`
+después de que el usuario elija un macrogrupo. No se crea esa entidad en esta
+fase.
 
 ## Decisiones pendientes
 

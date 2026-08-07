@@ -100,11 +100,11 @@ cambios de esquema hechos manualmente desde Dashboard. Está prohibido ejecutar
 se versionan.
 
 La fundación se verificó contra el proyecto remoto de desarrollo vinculado: las
-dos migraciones están aplicadas, el seed contiene 12 grupos musculares y los
-tipos se generaron desde el esquema remoto real. Una prueba opt-in confirmó el
-registro, el trigger de perfil y el aislamiento básico de RLS con dos usuarios
-controlados. pgTAP local continúa pendiente y esta comprobación no convierte el
-proyecto en producción ni sustituye el entorno reproducible.
+tres migraciones están aplicadas, el seed contiene 7 macrogrupos y 26 músculos
+específicos, y los tipos se generaron desde el esquema remoto real. Una prueba
+opt-in confirmó el registro, el trigger de perfil y el aislamiento básico de RLS
+con dos usuarios controlados. pgTAP local continúa pendiente y esta comprobación
+no convierte el proyecto en producción ni sustituye el entorno reproducible.
 
 La variable pública preferida es `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, con
 fallback temporal a `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Las claves
@@ -139,6 +139,32 @@ consumen en autenticación, onboarding ni en la aplicación actual.
 - `Progreso` compone historial, calendario y evolución sin duplicar sus datos de
   origen.
 
+## Taxonomía muscular
+
+`muscle_groups` contiene solamente los siete macrogrupos que organizan la
+experiencia del usuario. `muscles` contiene las 26 zonas específicas y
+`exercise_muscles` relaciona cada ejercicio directamente con ellas, incluyendo
+su participación primaria, secundaria o estabilizadora.
+
+El recorrido de datos es:
+
+```text
+exercises -> exercise_muscles -> muscles -> muscle_groups
+```
+
+El volumen de un músculo se agrega desde sus ejercicios y series; el volumen de
+un macrogrupo agrega los músculos que le pertenecen. Así pueden coexistir, por
+ejemplo, `Piernas: 42 series` y `Glúteos: 18 series` sin almacenar estadísticas
+duplicadas.
+
+Una futura preferencia podrá apuntar directamente a `muscles.id` para priorizar
+Glúteos dentro de Piernas sin cambiar el catálogo. Esa preferencia no se
+implementa en esta fase.
+
+La clasificación es deliberadamente funcional y no pretende cubrir una anatomía
+académica completa. Antebrazos se ubica bajo Bíceps para simplificar la
+navegación del producto.
+
 ## Persistencia del entrenamiento activo
 
 - PostgreSQL es la fuente de verdad de una sesión activa.
@@ -163,7 +189,8 @@ consumen en autenticación, onboarding ni en la aplicación actual.
 
 - La autorización se valida en servidor y PostgreSQL.
 - Toda información privada utiliza Row Level Security.
-- El catálogo común de ejercicios es de solo lectura para el cliente común.
+- Los macrogrupos, músculos y ejercicios oficiales son catálogos de sólo lectura
+  para el cliente común.
 - Las claves de servicio se usan solo en contexto de servidor.
 - Las tablas hijas validan propiedad recorriendo su rutina o sesión.
 - Las escrituras de ejercicios personalizados se limitan a su creador; los

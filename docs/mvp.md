@@ -29,10 +29,12 @@ navegación en [`navigation.md`](navigation.md) y el orden de construcción en
 ### Biblioteca de ejercicios
 
 - El usuario puede explorar un catálogo común de ejercicios de musculación.
-- Puede buscar ejercicios por nombre y filtrarlos por grupo muscular principal
-  o equipamiento.
-- Cada ejercicio presenta, como mínimo, nombre, grupo muscular principal y
-  equipamiento.
+- Puede buscar ejercicios por nombre y filtrarlos por uno de los siete
+  macrogrupos musculares o por equipamiento.
+- Cada ejercicio presenta, como mínimo, nombre, macrogrupo principal derivado de
+  sus músculos asociados y equipamiento.
+- La asociación interna usa músculos o zonas específicas para permitir una
+  clasificación más precisa sin recargar la navegación principal.
 - El catálogo se utiliza al configurar rutinas. Crear ejercicios personalizados
   no forma parte del alcance confirmado.
 
@@ -151,7 +153,8 @@ navegación en [`navigation.md`](navigation.md) y el orden de construcción en
   abrir la aplicación.
 - La búsqueda encuentra coincidencias por nombre sin exigir coincidencia exacta
   de mayúsculas.
-- Los filtros reducen el catálogo según grupo muscular principal o equipamiento.
+- Los filtros reducen el catálogo según macrogrupo muscular principal o
+  equipamiento.
 - Un ejercicio seleccionado desde la biblioteca puede agregarse a un día de
   rutina.
 

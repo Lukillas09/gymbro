@@ -107,6 +107,13 @@ Los componentes visuales no deben contener reglas de negocio complejas.
   Dashboard.
 - No afirmar que pgTAP pasó sin un entorno local compatible con contenedores.
 - No editar manualmente los tipos generados desde PostgreSQL.
+- `muscle_groups` contiene sólo los siete macrogrupos visibles del producto.
+- `muscles` contiene músculos o zonas específicas y siempre pertenece a un
+  macrogrupo.
+- `exercise_muscles` referencia `muscles`; el macrogrupo se obtiene mediante la
+  relación y no se duplica en esa tabla.
+- Antebrazos pertenece a Bíceps como simplificación funcional de producto, no
+  como afirmación anatómica estricta.
 
 La prueba `supabase:remote:test:auth` es manual y opt-in. Sólo puede ejecutarse
 contra el proyecto descartable de desarrollo, no pertenece a `check` o CI y debe

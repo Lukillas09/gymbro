@@ -10,7 +10,8 @@ El proyecto se encuentra en la fase de fundamentos funcionales del MVP.
 
 Actualmente están implementados el shell mobile-first, la fundación PostgreSQL,
 la autenticación por correo y contraseña, el onboarding y la protección de
-rutas. La biblioteca de ejercicios y las rutinas son las próximas fases.
+rutas. La taxonomía muscular de dos niveles prepara la biblioteca de ejercicios,
+que continúa siendo la próxima fase funcional.
 
 ## Funcionalidades planificadas
 
@@ -142,6 +143,24 @@ desarrollo y muestra un mensaje neutral. Para probar registros de forma sostenid
 en el proyecto remoto de desarrollo se debe configurar un SMTP de pruebas; como
 alternativa temporal, esperar a que se renueve el cupo.
 
+## Taxonomía muscular
+
+El catálogo separa siete macrogrupos visibles de los 26 músculos o zonas
+específicas que se asocian a ejercicios:
+
+```text
+muscle_groups -> muscles -> exercise_muscles -> exercises
+```
+
+Los macrogrupos son Pecho, Espalda, Abdomen, Tríceps, Bíceps, Hombros y
+Piernas. `exercise_muscles` guarda solamente `muscle_id`; cualquier estadística
+por macrogrupo se obtiene recorriendo `muscles.muscle_group_id`, sin persistir
+una segunda clasificación redundante.
+
+Esta es una taxonomía funcional para una aplicación de entrenamiento, no una
+clasificación anatómica académica completa. Antebrazos se agrupa bajo Bíceps por
+una decisión de navegación simplificada del producto.
+
 ## Supabase local
 
 El CLI se instala como dependencia de desarrollo. Con Docker activo, iniciar la
@@ -224,9 +243,10 @@ tokens ni las variables transitorias en el repositorio o `.env.example`.
 ### Estado verificado de la fundación remota
 
 El proyecto remoto exclusivo de desarrollo está vinculado y su historial
-coincide con las dos migraciones versionadas. El dry-run no informa cambios
+coincide con las tres migraciones versionadas. El dry-run no informa cambios
 pendientes. El seed protegido fue aplicado y una consulta de sólo lectura
-confirmó los 12 grupos musculares esperados, con nombres y slugs únicos.
+confirmó 7 macrogrupos, 26 músculos específicos, slugs únicos y ausencia de
+relaciones huérfanas.
 
 La validación auth remota confirmó un registro real con email pendiente de
 confirmación, la creación automática de `profiles` y el aislamiento RLS entre
