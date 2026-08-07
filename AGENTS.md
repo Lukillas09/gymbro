@@ -12,8 +12,8 @@ musculación. La experiencia central es:
 5. Finalizar el entrenamiento.
 6. Consultar progreso e historial.
 
-Las funcionalidades nuevas deben mejorar este flujo o aportar una razón
-clara para incorporarse.
+Las funcionalidades nuevas deben mejorar este flujo o aportar una razón clara
+para incorporarse.
 
 ## Stack
 
@@ -47,6 +47,22 @@ No reemplazar estas tecnologías sin una decisión documentada.
 
 Los componentes visuales no deben contener reglas de negocio complejas.
 
+## Autenticación
+
+- Next.js 16 utiliza `src/proxy.ts`; no crear `middleware.ts`.
+- El Proxy renueva la sesión con `supabase.auth.getClaims()` y sólo realiza
+  comprobaciones optimistas.
+- Los layouts y acciones de servidor vuelven a verificar la identidad antes de
+  cargar o modificar datos.
+- No confiar en `getSession()` como prueba de identidad en servidor.
+- La autorización de datos privados también debe permanecer en RLS.
+- La identidad se obtiene desde la sesión, nunca desde un `user_id` del cliente.
+- No usar `service_role` para registro, login, onboarding o consultas RLS.
+- El onboarding está completo cuando existen username, nombre visible, nivel,
+  objetivo y unidad preferida.
+- Las redirecciones proporcionadas por el cliente deben restringirse a rutas
+  privadas internas.
+
 ## TypeScript
 
 - No usar `any` sin justificación.
@@ -68,98 +84,54 @@ Los componentes visuales no deben contener reglas de negocio complejas.
 
 - Nunca agregar secretos al repositorio.
 - No exponer claves privadas mediante variables `NEXT_PUBLIC_*`.
-- Validar autorización en el servidor.
-- No confiar únicamente en controles de interfaz.
+- Validar autorización en servidor y PostgreSQL.
+- No confiar únicamente en controles de interfaz o Proxy.
 - Toda tabla privada de Supabase debe tener políticas RLS.
-- No registrar información sensible en logs.
+- No registrar passwords, tokens, cookies ni información sensible.
 
 ## Base de datos
 
-- Las modificaciones se realizan mediante migraciones.
-- No modificar manualmente producción.
+- Las modificaciones se realizan mediante migraciones nuevas.
+- No modificar manualmente producción ni migraciones ya aplicadas.
 - Agregar restricciones cuando una regla pueda garantizarse en PostgreSQL.
 - Mantener documentación del esquema actualizada.
+- Ejecutar `npm run supabase:reset` y `npm run supabase:test` para cambios SQL
+  cuando Docker esté disponible.
+- Regenerar tipos con `npm run supabase:types` en local o
+  `npm run supabase:types:remote` después de migraciones remotas que cambien
+  tipos.
+- Las validaciones normales y CI no dependen de Supabase remoto.
+- Ejecutar `supabase:remote:dry-run` antes de cualquier push remoto.
+- Nunca ejecutar `db reset --linked` ni apuntar desarrollo a producción.
+- Las migraciones son la única fuente de verdad; no editar el esquema desde
+  Dashboard.
+- No afirmar que pgTAP pasó sin un entorno local compatible con contenedores.
+- No editar manualmente los tipos generados desde PostgreSQL.
+
+La prueba `supabase:remote:test:auth` es manual y opt-in. Sólo puede ejecutarse
+contra el proyecto descartable de desarrollo, no pertenece a `check` o CI y debe
+eliminar los usuarios controlados creados.
 
 ## Calidad
 
 Antes de terminar una tarea, ejecutar:
 
-````bash
+```bash
 npm run format:check
 npm run lint
 npm run typecheck
 npm run test:run
-npm run test:e2e
 npm run build
+npm run test:e2e
+git diff --check
+```
 
-# 16. Crear la documentación inicial
+<!-- BEGIN:nextjs-agent-rules -->
 
-## `docs/product.md`
+# This is NOT the Next.js you know
 
-```markdown
-# Producto GymBro
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 
-## Visión
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
-Convertir GymBro en el compañero indispensable para personas que realizan
-entrenamiento de musculación en gimnasio o en casa.
-
-## Problema
-
-Muchas personas anotan sus entrenamientos de forma desordenada, olvidan
-sus pesos anteriores, no controlan correctamente los descansos y no
-tienen una visión clara de su progreso.
-
-## Propuesta de valor
-
-GymBro reúne rutina, ejecución, descanso, historial, estadísticas y
-motivación social en una experiencia diseñada principalmente para celular.
-
-## Público inicial
-
-Personas principiantes e intermedias que entrenan musculación entre dos y
-seis veces por semana.
-
-## Experiencia central
-
-1. Abrir GymBro.
-2. Ver el entrenamiento del día.
-3. Iniciar la sesión.
-4. Registrar cada serie rápidamente.
-5. Controlar el descanso.
-6. Finalizar la sesión.
-7. Ver progreso y recomendaciones.
-
-## Principios del producto
-
-- El entrenamiento es más importante que la aplicación.
-- Registrar una serie debe requerir muy pocos toques.
-- Los datos del usuario deben ser privados por defecto.
-- Las sugerencias deben ser explicables.
-- La actividad social debe motivar, no distraer.
-- La aplicación no debe convertirse en una red social de contenido.
-
-## MVP incluido
-
-- Registro e inicio de sesión.
-- Perfil básico.
-- Biblioteca de ejercicios.
-- Creación de rutinas.
-- Entrenamiento activo.
-- Series, repeticiones y peso.
-- Temporizador de descanso.
-- Historial.
-- Calendario.
-- Estadísticas básicas.
-
-## Fuera del MVP
-
-- Chat.
-- Feed de publicaciones.
-- Rankings globales.
-- Análisis mediante cámara.
-- Nutrición.
-- Integraciones con relojes.
-- Rutinas generadas completamente por IA.
-- Suscripciones.
-````
+<!-- END:nextjs-agent-rules -->

@@ -2,17 +2,21 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
 import { PageShell } from "@/components/ui/page-shell";
+import { requireCompletedProfile } from "@/features/auth/server";
 
 export const metadata: Metadata = {
   title: "Inicio",
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  const { profile } = await requireCompletedProfile();
+  const firstName = profile.display_name?.trim().split(/\s+/)[0] ?? "GymBro";
+
   return (
     <PageShell
       description="Organizá tu rutina y mantené el entrenamiento a mano cuando llegue el momento de empezar."
       eyebrow="Inicio"
-      title="Tu espacio de entrenamiento"
+      title={`Hola, ${firstName}`}
     >
       <section
         aria-labelledby="getting-started-title"
