@@ -21,7 +21,9 @@ la situación real del usuario: crear una rutina, empezar el día previsto,
 reanudar una sesión, reconocer lo completado hoy o mostrar el próximo descanso.
 Historial permite recorrer sesiones finalizadas y sus snapshots. Progreso compara
 la frecuencia de los últimos 28 días con los 28 anteriores, muestra evidencia
-semanal y abre una evolución textual por ejercicio con PR de peso histórico.
+semanal y abre una evolución textual por ejercicio con PR de peso histórico. El
+Calendario mensual combina entrenamientos completados, la sesión activa y los
+días fijos de la rutina activa sin persistir eventos duplicados.
 
 ## Funcionalidades planificadas
 
@@ -34,7 +36,7 @@ semanal y abre una evolución textual por ejercicio con PR de peso histórico.
 - Registro de series, repeticiones y peso.
 - Temporizador de descanso.
 - Historial de entrenamientos.
-- Calendario de asistencia.
+- Calendario mensual de entrenamientos planificados y realizados.
 - Estadísticas básicas de progreso.
 
 ### Funcionalidades futuras
@@ -118,9 +120,10 @@ de servidor vuelven a verificar la sesión y el perfil, mientras PostgreSQL
 mantiene la autorización mediante RLS.
 
 Las rutas `/login` y `/register` son públicas. Inicio, Rutinas, Entrenar,
-Progreso y Perfil requieren sesión y onboarding completo. Un perfil se considera
-completo cuando tiene `username`, `display_name`, `training_level`,
-`primary_goal` y `preferred_weight_unit`.
+Progreso y Perfil, junto con sus vistas privadas como `/calendar`, requieren
+sesión y onboarding completo. Un perfil se considera completo cuando tiene
+`username`, `display_name`, `training_level`, `primary_goal` y
+`preferred_weight_unit`.
 
 En Supabase Auth debe configurarse:
 
@@ -193,7 +196,8 @@ La ruta privada `/routines` separa la rutina activa de las demás y permite crea
 una nueva desde `/routines/new`. La vista `/routines/[id]` presenta el plan y un
 resumen de series objetivo asociadas a músculos `primary`; el editor
 `/routines/[id]/edit` administra días, ejercicios y orden sin depender de
-drag-and-drop.
+drag-and-drop. Cada día permite elegir un `weekday` o declarar explícitamente
+que no tiene fecha fija.
 
 Cada prescripción conserva series, rango de repeticiones, descanso y RIR objetivo
 opcional. El mismo ejercicio puede aparecer en días distintos, pero no dos veces
@@ -252,7 +256,30 @@ una sesión completada anterior con el mismo `exercise_id`, puede mostrarse una
 mejora determinista como `+1 REP` o `+2.5 KG`.
 
 Home COMPLETED y el resumen posterior al entrenamiento enlazan este detalle.
-Calendario y Session Capsules todavía no forman parte de la implementación.
+Session Capsules todavía no forma parte de la implementación.
+
+## Calendario de entrenamientos
+
+La ruta privada `/calendar`, accesible desde `/progress` sin agregar una sexta
+pestaña, representa una vista mensual de la línea temporal real. El mes y el día
+seleccionado se expresan como `?month=YYYY-MM&day=YYYY-MM-DD`, por lo que refresh,
+atrás y adelante conservan el contexto.
+
+Los entrenamientos realizados provienen únicamente de `workout_sessions`
+finalizadas y una sesión `in_progress` se comunica como LIVE. La planificación
+futura se deriva de la rutina activa y `routine_days.weekday`; si falta un
+weekday en cualquier día entrenable, el calendario conserva el historial pero
+no inventa fechas. Una sesión sólo se considera coincidente con el plan cuando
+su `routine_day_id` corresponde al día programado.
+
+La consulta se limita a las fechas visibles de la cuadrícula y carga en paralelo
+las sesiones completadas del rango, la sesión activa y la rutina activa con sus
+ejercicios. El detalle enlaza resultados completos en `/history/[id]` y reutiliza
+`startWorkoutAction` para iniciar Training Mode. No existen `calendar_events`,
+fechas programadas persistidas ni migraciones específicas del calendario.
+Sólo cuando el mes, la rutina y la sesión activa están vacíos se consulta como
+máximo un `id` histórico para no afirmar incorrectamente que nunca hubo
+entrenamientos.
 
 ## Progreso básico
 

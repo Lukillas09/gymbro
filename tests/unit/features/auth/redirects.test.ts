@@ -11,6 +11,9 @@ describe("redirecciones de autenticación", () => {
       "/exercises/barbell-bench-press",
     );
     expect(resolveSafeRedirect("/history/example")).toBe("/history/example");
+    expect(resolveSafeRedirect("/calendar?month=2026-08")).toBe(
+      "/calendar?month=2026-08",
+    );
   });
 
   it("rechaza URLs externas y rutas públicas", () => {

@@ -15,6 +15,7 @@ import type { TrainingGoal } from "./types";
 
 export type RoutineFieldName = "name" | "goal";
 export type DayFieldName = "dayName";
+export type WeekdayFieldName = "weekday";
 export type PrescriptionFieldName =
   | "targetSets"
   | "targetRepsMin"
@@ -124,6 +125,22 @@ export function validateDayName(
   }
 
   return { ok: true, data: dayName };
+}
+
+export function validateWeekday(
+  value: string,
+): ValidationResult<number | null, WeekdayFieldName> {
+  if (!value) return { ok: true, data: null };
+
+  const weekday = parseInteger(value);
+  if (weekday === null || weekday < 0 || weekday > 6) {
+    return {
+      ok: false,
+      fieldErrors: { weekday: "Elegí un día de la semana válido." },
+    };
+  }
+
+  return { ok: true, data: weekday };
 }
 
 export function validatePrescriptionInput(

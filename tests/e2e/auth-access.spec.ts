@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 const privateRoutes = [
   "/",
+  "/calendar",
   "/routines",
   "/workout",
   "/history",
@@ -248,6 +249,9 @@ test("crea y visualiza una rutina mobile-first", async ({ page }, testInfo) => {
   await page.getByLabel("Nuevo día").fill("Pierna A");
   await page.getByRole("button", { name: "Agregar día" }).click();
   await expect(page.getByLabel("Nombre del día")).toHaveValue("Pierna A");
+  await page.getByLabel("Día fijo de Pierna A").selectOption("1");
+  await page.getByRole("button", { name: "Guardar día fijo" }).click();
+  await expect(page.getByText("Día fijo guardado.")).toBeVisible();
 
   await page.getByRole("button", { name: "Agregar ejercicio" }).click();
   const dialog = page.getByRole("dialog", { name: "Agregar ejercicio" });

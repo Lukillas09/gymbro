@@ -4,6 +4,7 @@ import {
   validateDayName,
   validatePrescriptionInput,
   validateRoutineInput,
+  validateWeekday,
 } from "@/features/routines/validation";
 
 describe("validación de rutinas", () => {
@@ -43,6 +44,16 @@ describe("validación de rutinas", () => {
     expect(validateDayName(" ")).toMatchObject({
       ok: false,
       fieldErrors: { dayName: expect.any(String) },
+    });
+  });
+
+  it("acepta weekdays y conserva la opción sin día fijo", () => {
+    expect(validateWeekday("1")).toEqual({ ok: true, data: 1 });
+    expect(validateWeekday("0")).toEqual({ ok: true, data: 0 });
+    expect(validateWeekday("")).toEqual({ ok: true, data: null });
+    expect(validateWeekday("7")).toMatchObject({
+      ok: false,
+      fieldErrors: { weekday: expect.any(String) },
     });
   });
 });

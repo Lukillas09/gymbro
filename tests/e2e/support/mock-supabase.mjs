@@ -87,6 +87,7 @@ function createAccount(email) {
     seedHomeScenario(email, state, userId);
     seedHistoryScenario(email, state, userId);
     seedProgressScenario(email, state, userId);
+    seedCalendarScenario(email, state, userId);
   }
 
   accountStates.set(email, state);
@@ -567,6 +568,50 @@ function seedProgressScenario(email, state, userId) {
       weightKg: 85,
       repetitions: 8,
     });
+  }
+}
+
+function removeRoutinePlan(state) {
+  state.routines = [];
+  state.days = [];
+  state.routineExercises = [];
+}
+
+function seedCalendarScenario(email, state, userId) {
+  const scenario = email.split("@")[0];
+  if (!scenario.startsWith("calendar-")) return;
+  if (scenario.startsWith("calendar-empty")) return;
+
+  const today = localWeekday(new Date());
+
+  if (scenario.startsWith("calendar-history")) {
+    const routine = seedRoutine(state, userId, [today, (today + 3) % 7]);
+    const sessionId = seedWorkout(state, userId, routine, { completed: true });
+    setHistoryWorkoutTime(state, sessionId, 1);
+    removeRoutinePlan(state);
+    return;
+  }
+
+  if (scenario.startsWith("calendar-partial")) {
+    seedRoutine(state, userId, [today, null]);
+    return;
+  }
+
+  if (scenario.startsWith("calendar-completed-only")) {
+    const routine = seedRoutine(state, userId, [
+      (today + 1) % 7,
+      (today + 3) % 7,
+    ]);
+    seedWorkout(state, userId, routine, { completed: true });
+    return;
+  }
+
+  const routine = seedRoutine(state, userId, [today, (today + 3) % 7]);
+
+  if (scenario.startsWith("calendar-live")) {
+    seedWorkout(state, userId, routine, { completed: false });
+  } else if (scenario.startsWith("calendar-completed-scheduled")) {
+    seedWorkout(state, userId, routine, { completed: true });
   }
 }
 

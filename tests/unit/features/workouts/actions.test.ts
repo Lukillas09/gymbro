@@ -34,7 +34,7 @@ describe("workout actions", () => {
     });
   });
 
-  it("revalida Home, entrenamiento e historial al finalizar", async () => {
+  it("revalida Home, calendario, entrenamiento e historial al finalizar", async () => {
     const sessionId = "10000000-0000-4000-8000-000000000001";
 
     const result = await finishWorkoutAction(sessionId);
@@ -48,6 +48,7 @@ describe("workout actions", () => {
     });
     expect(mocks.revalidatePath.mock.calls).toEqual([
       ["/"],
+      ["/calendar"],
       ["/workout"],
       [`/workout/${sessionId}`],
       ["/history"],

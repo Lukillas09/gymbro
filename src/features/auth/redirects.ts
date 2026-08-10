@@ -1,5 +1,6 @@
 const privateRouteRoots = [
   "/",
+  "/calendar",
   "/exercises",
   "/history",
   "/profile",

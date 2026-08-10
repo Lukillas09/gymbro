@@ -70,6 +70,16 @@ describe("AppNavigation", () => {
     );
   });
 
+  it("representa Calendario dentro de la sección Progreso", () => {
+    mockUsePathname.mockReturnValue("/calendar");
+    render(<AppNavigation />);
+
+    expect(screen.getByRole("link", { name: "Progreso" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+  });
+
   it("distingue la ruta activa de la acción principal", () => {
     mockUsePathname.mockReturnValue("/routines");
     render(<AppNavigation />);

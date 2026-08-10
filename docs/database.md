@@ -372,6 +372,14 @@ finalización y orden estable. No se persisten agregados, puntajes, volumen ni
 estimaciones de 1RM, y `src/types/database.generated.ts` no cambia porque no hay
 una migración nueva.
 
+Training Calendar tampoco modifica el esquema. El pasado se agrupa por el día
+local de `workout_sessions.completed_at`, el presente usa la sesión
+`in_progress` y el futuro se deriva de la rutina activa con
+`routine_days.weekday`. No existen `calendar_events`, `scheduled_workouts` ni una
+columna `scheduled_date`. Una sesión completada sólo coincide con la
+planificación cuando conserva el mismo `routine_day_id`; entrenar otra cosa no
+reescribe la evidencia histórica.
+
 El volumen por músculo sigue `exercise_muscles -> muscles`; el volumen por
 macrogrupo agrega después `muscles -> muscle_groups`. Por ejemplo, Hip Thrust se
 asocia a Glúteos y deriva Piernas. Esto permite mostrar simultáneamente totales

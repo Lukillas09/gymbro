@@ -76,6 +76,7 @@ describe("componentes de rutinas", () => {
     expect(screen.getAllByLabelText("Nombre del día")[0]).toHaveValue(
       "Torso A",
     );
+    expect(screen.getByLabelText("Día fijo de Torso A")).toHaveValue("");
     expect(
       screen.getByRole("button", { name: "Subir Torso A" }),
     ).toBeDisabled();

@@ -158,8 +158,8 @@ consumen en autenticación, onboarding ni en la aplicación actual.
   [`navigation.md`](navigation.md).
 - `Entrenar` resuelve primero una sesión activa y, si no existe, el día que se
   desea iniciar.
-- `Progreso` compone historial y evolución sin duplicar sus datos de origen; el
-  calendario continúa pendiente.
+- `Progreso` compone historial, calendario y evolución sin duplicar sus datos de
+  origen. `/calendar` pertenece a esta sección sin sumar una pestaña principal.
 
 ### Home adaptativo
 
@@ -203,6 +203,37 @@ existe N+1 ni una segunda interpretación de progreso.
 La zona horaria y sus límites de calendario viven en `src/lib/date-time.ts`.
 Home e Historial comparten `America/Argentina/Buenos_Aires`, incluida la
 agrupación mensual de sesiones cercanas a medianoche UTC.
+
+### Calendario de entrenamientos
+
+`src/features/calendar` separa tipos, construcción mensual, precedencia,
+consultas y componentes. `/calendar` es un Server Component que recibe
+`month` y `day` por query string. Los enlaces de fecha y mes hacen que refresh,
+atrás y adelante sean deterministas; sólo el botón que reutiliza
+`startWorkoutAction` necesita estado cliente.
+
+La cuadrícula comienza en lunes e incluye únicamente los días adyacentes
+necesarios para cerrar semanas completas. Una consulta trae sesiones
+`completed` entre el inicio y el fin visible, otra comprueba la única sesión
+`in_progress`, y una tercera carga la rutina activa con días, ejercicios y
+macrogrupos `primary`. Son tres consultas paralelas y acotadas, sin N+1 ni carga
+completa de Historial.
+
+Si no existe rutina, sesión activa ni resultado dentro del rango, una consulta
+condicional trae como máximo un `id` completado para distinguir una cuenta
+realmente vacía de un mes sin actividad. No carga snapshots ni series.
+
+`CalendarDayState` centraliza `empty`, `scheduled`, `completed`, `training` y
+`scheduled-and-completed`. LIVE tiene precedencia. Una sesión completada domina
+la representación histórica y sólo se combina semánticamente con el plan cuando
+su `routine_day_id` coincide. La planificación se proyecta desde hoy hacia el
+futuro únicamente si todos los días entrenables tienen `weekday`; un plan parcial
+no se distribuye sobre fechas arbitrarias.
+
+Todos los agrupamientos usan `src/lib/date-time.ts` y
+`America/Argentina/Buenos_Aires`. Las mutaciones de rutinas, weekday e inicio o
+finalización de Training Mode revalidan `/calendar`; no existe caché, tabla ni
+estado persistido paralelo.
 
 ### Progreso básico
 
@@ -322,8 +353,8 @@ conservando el historial aunque cambie o se archive la rutina.
 - Duración, cantidad de series, resumen muscular y mejoras factuales se derivan
   al leer y no se almacenan como metadata visual.
 - Calendario, evolución y récords se calculan desde sesiones finalizadas y series
-  completadas. Evolución y PR ya se derivan al leer; el calendario permanece
-  pendiente.
+  completadas. La parte futura del calendario agrega la rutina activa y sus
+  weekdays, siempre al leer.
 - No se crean entidades persistentes para métricas que puedan derivarse de forma
   confiable en esta fase.
 

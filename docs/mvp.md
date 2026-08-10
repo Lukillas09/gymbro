@@ -127,9 +127,17 @@ navegación en [`navigation.md`](navigation.md) y el orden de construcción en
 - Una comparación sólo muestra progreso cuando peso o repeticiones mejoran bajo
   una condición determinista respecto de la sesión completada anterior del
   mismo ejercicio.
-- El calendario identifica los días con sesiones finalizadas.
-- Seleccionar un día permite ver las sesiones finalizadas en esa fecha.
-- Las sesiones activas no cuentan como entrenamientos completados.
+- El calendario mensual identifica hoy, las sesiones finalizadas, una sesión
+  activa y los próximos días fijos de la rutina activa.
+- Seleccionar un día permite ver todas las sesiones finalizadas en esa fecha y
+  abrir su detalle histórico sin copiarlo completo.
+- La planificación futura se deriva de `routine_days.weekday` sólo cuando todos
+  los días entrenables tienen un día fijo; un plan parcial no genera fechas.
+- Una sesión activa se comunica como LIVE, pero no cuenta como entrenamiento
+  completado.
+- Un entrenamiento realizado sólo coincide con el plan cuando referencia el
+  mismo día de rutina. Si se entrenó otra cosa, la realidad permanece prioritaria.
+- El mes y el día seleccionado sobreviven refresh y navegación del navegador.
 
 ### Evolución y récords personales
 
@@ -168,8 +176,8 @@ navegación en [`navigation.md`](navigation.md) y el orden de construcción en
   no perder lo registrado.
 - **HU-11:** Como usuario, quiero finalizar una sesión para incorporarla al
   historial.
-- **HU-12:** Como usuario, quiero consultar un calendario para reconocer mi
-  constancia.
+- **HU-12:** Como usuario, quiero consultar un calendario para saber cuándo
+  entrené, qué estaba programado y qué viene después.
 - **HU-13:** Como usuario, quiero revisar la evolución y el récord de un ejercicio
   para comprender mi progreso.
 
@@ -256,7 +264,12 @@ navegación en [`navigation.md`](navigation.md) y el orden de construcción en
 - La cantidad de series coincide con filas reales de `workout_sets`, no con
   `target_sets`; RIR ausente y mejoras no comparables no generan contenido
   ficticio.
-- El calendario marca exactamente las fechas que contienen sesiones finalizadas.
+- El calendario agrupa exactamente por día local todas las sesiones finalizadas
+  del rango visible y tolera más de una en la misma fecha.
+- Los días futuros aparecen programados sólo desde weekdays completos de la
+  rutina activa y nunca desde fechas persistidas o eventos manuales.
+- Desde un día programado se inicia el flujo existente; si ya existe una sesión
+  activa, sólo se ofrece continuarla.
 - La evolución de un ejercicio usa solamente series completadas de sesiones
   finalizadas.
 - El récord mostrado coincide con la regla de mayor peso, repeticiones y fecha

@@ -14,6 +14,7 @@ import { isUuid, validateWorkoutSetInput } from "./validation";
 
 function revalidateWorkout(sessionId: string) {
   revalidatePath("/");
+  revalidatePath("/calendar");
   revalidatePath("/workout");
   revalidatePath(`/workout/${sessionId}`);
 }
@@ -93,6 +94,7 @@ export async function completeWorkoutSetAction(
   };
 
   revalidatePath("/");
+  revalidatePath("/calendar");
   revalidatePath("/workout");
   return { ok: true, value: result };
 }

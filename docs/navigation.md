@@ -70,20 +70,22 @@ sin alterar la rutina.
 Agrupa tres vistas relacionadas:
 
 - historial cronológico disponible en `/history`;
-- calendario de entrenamientos finalizados;
+- calendario mensual planificado y realizado en `/calendar`;
 - evolución y récord por ejercicio en `/progress/exercises/[exerciseId]`.
 
-La pantalla Progreso mantiene el acceso en la navegación principal y enlaza el
-historial sin crear una sexta pestaña. Dentro de `/history` y `/history/[id]`,
-Progreso continúa marcado como sección activa. Home COMPLETED y el resumen final
-también pueden abrir directamente el detalle histórico.
+La pantalla Progreso mantiene el acceso en la navegación principal y ofrece una
+entrada clara a Calendario sin crear una sexta pestaña. Dentro de `/calendar`,
+`/history` y `/history/[id]`, Progreso continúa marcado como sección activa.
+Home COMPLETED y el resumen final también pueden abrir directamente el detalle
+histórico.
 
 `/progress` prioriza una interpretación de las últimas cuatro semanas, seguida
 por frecuencia semanal, mejoras factuales y una lista buscable de ejercicios
 entrenados. El detalle del ejercicio enlaza cada sesión con `/history/[id]`.
 
-No incluye recomendaciones ni comparaciones sociales. El calendario permanece
-pendiente.
+Calendario responde “¿cuándo?” y enlaza History para responder “¿qué hice?”. No
+duplica el detalle histórico, métricas de Progress, recomendaciones ni
+comparaciones sociales.
 
 ### Perfil
 
@@ -119,7 +121,7 @@ servidor además del Proxy para evitar loops y depender de una sola barrera.
 6. Completar una serie inicia descanso; puede extenderse 15 segundos o saltarse.
 7. Cada cambio confirmado se persiste y puede recuperarse después de recargar.
 8. El usuario revisa el resumen y confirma la finalización.
-9. La sesión pasa al historial; calendario, evolución y récords se derivarán de
+9. La sesión pasa al historial; calendario, evolución y récords se derivan de
    esos mismos resultados completados.
 10. `Inicio` sugiere el siguiente día de la rutina activa.
 

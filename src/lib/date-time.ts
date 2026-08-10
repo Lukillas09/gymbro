@@ -6,6 +6,8 @@ type ZonedCalendarDate = Readonly<{
   day: number;
 }>;
 
+const LOCAL_DATE_KEY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
 const datePartFormatters = new Map<string, Intl.DateTimeFormat>();
 
 function getDatePartFormatter(timeZone: string) {
@@ -84,6 +86,26 @@ function asDate(value: Date | string) {
   return typeof value === "string" ? new Date(value) : value;
 }
 
+function parseLocalDateKey(value: string): ZonedCalendarDate {
+  const match = LOCAL_DATE_KEY_PATTERN.exec(value);
+  if (!match) throw new Error("La fecha local no tiene un formato valido.");
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const candidate = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    candidate.getUTCFullYear() !== year ||
+    candidate.getUTCMonth() + 1 !== month ||
+    candidate.getUTCDate() !== day
+  ) {
+    throw new Error("La fecha local no existe.");
+  }
+
+  return { year, month, day };
+}
+
 export function getLocalDateKey(value: Date | string, timeZone: string) {
   const { year, month, day } = calendarDate(asDate(value), timeZone);
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -136,6 +158,23 @@ export function getLocalRollingDayRange(
     start: zonedMidnightToUtc(start, timeZone).toISOString(),
     end: zonedMidnightToUtc(end, timeZone).toISOString(),
   };
+}
+
+export function getLocalDateKeyRange(
+  startDateKey: string,
+  endDateKey: string,
+  timeZone: string,
+) {
+  const start = parseLocalDateKey(startDateKey);
+  const end = parseLocalDateKey(endDateKey);
+  const startUtc = zonedMidnightToUtc(start, timeZone);
+  const endUtc = zonedMidnightToUtc(end, timeZone);
+
+  if (startUtc >= endUtc) {
+    throw new Error("El rango local debe finalizar despues de comenzar.");
+  }
+
+  return { start: startUtc.toISOString(), end: endUtc.toISOString() };
 }
 
 export function formatLocalDate(

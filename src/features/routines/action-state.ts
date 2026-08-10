@@ -2,10 +2,11 @@ import type {
   DayFieldName,
   PrescriptionFieldName,
   RoutineFieldName,
+  WeekdayFieldName,
 } from "./validation";
 
 export type RoutineActionFieldName =
-  RoutineFieldName | DayFieldName | PrescriptionFieldName;
+  RoutineFieldName | DayFieldName | WeekdayFieldName | PrescriptionFieldName;
 
 export type RoutineActionState = Readonly<{
   status: "idle" | "success" | "error";

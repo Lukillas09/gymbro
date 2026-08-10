@@ -11,6 +11,7 @@ import {
   isUuid,
   validatePrescriptionInput,
   validateRoutineInput,
+  validateWeekday,
 } from "./validation";
 
 function readFormValue(formData: FormData, name: string) {
@@ -31,6 +32,7 @@ function unavailableState(message: string): RoutineActionState {
 
 function revalidateRoutine(routineId: string) {
   revalidatePath("/");
+  revalidatePath("/calendar");
   revalidatePath("/routines");
   revalidatePath("/workout");
   revalidatePath(`/routines/${routineId}`);
@@ -189,6 +191,48 @@ export async function renameRoutineDayAction(
 
   revalidateRoutine(routineId);
   return { status: "success", message: "Nombre del día guardado." };
+}
+
+export async function updateRoutineDayWeekdayAction(
+  routineId: string,
+  dayId: string,
+  expectedUpdatedAt: string,
+  _previousState: RoutineActionState,
+  formData: FormData,
+): Promise<RoutineActionState> {
+  if (
+    !isUuid(routineId) ||
+    !isUuid(dayId) ||
+    Number.isNaN(Date.parse(expectedUpdatedAt))
+  ) {
+    return invalidReferenceState();
+  }
+
+  const validation = validateWeekday(readFormValue(formData, "weekday"));
+  if (!validation.ok) {
+    return { status: "error", fieldErrors: validation.fieldErrors };
+  }
+
+  await requireCompletedProfile();
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("routine_days")
+    .update({ weekday: validation.data })
+    .eq("id", dayId)
+    .eq("routine_id", routineId)
+    .eq("updated_at", expectedUpdatedAt)
+    .select("id")
+    .maybeSingle();
+
+  if (error) return unavailableState("No pudimos guardar el día fijo.");
+  if (!data) {
+    return unavailableState(
+      "El día cambió en otra pestaña. Recargá antes de volver a guardar.",
+    );
+  }
+
+  revalidateRoutine(routineId);
+  return { status: "success", message: "Día fijo guardado." };
 }
 
 export async function addRoutineExerciseAction(
@@ -481,6 +525,7 @@ export async function archiveRoutineAction(
   }
 
   revalidatePath("/");
+  revalidatePath("/calendar");
   revalidatePath("/routines");
   revalidatePath("/workout");
   redirect("/routines");

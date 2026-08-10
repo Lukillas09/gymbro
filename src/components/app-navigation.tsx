@@ -20,7 +20,12 @@ const navigationItems = [
 ] satisfies readonly NavigationItem[];
 
 function isCurrentPath(pathname: string, href: string) {
-  if (href === "/progress" && pathname.startsWith("/history")) return true;
+  if (
+    href === "/progress" &&
+    (pathname.startsWith("/history") || pathname.startsWith("/calendar"))
+  ) {
+    return true;
+  }
   return href === "/"
     ? pathname === href
     : pathname === href || pathname.startsWith(`${href}/`);

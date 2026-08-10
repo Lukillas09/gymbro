@@ -17,6 +17,7 @@ import { ExercisePicker } from "./exercise-picker";
 import { PendingButton } from "./pending-button";
 import { PrescriptionForm } from "./prescription-form";
 import { RoutineForm } from "./routine-form";
+import { WeekdayForm } from "./weekday-form";
 
 type RoutineEditorProps = Readonly<{
   routine: RoutineDetail;
@@ -55,6 +56,13 @@ function DayEditor({
               name={day.name}
               routineId={routineId}
               updatedAt={day.updatedAt}
+            />
+            <WeekdayForm
+              dayId={day.id}
+              dayName={day.name}
+              routineId={routineId}
+              updatedAt={day.updatedAt}
+              weekday={day.weekday}
             />
           </div>
         </div>
