@@ -91,6 +91,31 @@ test("permite navegar entre login y registro", async ({ page }) => {
   await expect(page).toHaveURL("/login");
 });
 
+test("usuario autenticado navega las cinco secciones principales", async ({
+  page,
+}, testInfo) => {
+  await loginForRoute(
+    page,
+    "/",
+    `main-navigation-${testInfo.project.name}@gymbro.test`,
+  );
+
+  for (const [label, route] of [
+    ["Rutinas", "/routines"],
+    ["Entrenar", "/workout"],
+    ["Progreso", "/progress"],
+    ["Perfil", "/profile"],
+    ["Inicio", "/"],
+  ] as const) {
+    await page.getByRole("link", { name: label }).click();
+    await expect(page).toHaveURL(route);
+    await expect(page.getByRole("link", { name: label })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+  }
+});
+
 test("usuario autenticado abre una biblioteca responsive", async ({
   page,
 }, testInfo) => {
@@ -168,11 +193,37 @@ test("rutinas muestra un estado vacío honesto", async ({ page }, testInfo) => {
   await expect(
     page.getByRole("heading", { name: "Todavía no tenés rutinas" }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: "Crear mi primera rutina" }),
-  ).toBeVisible();
+  const createRoutine = page.getByRole("link", {
+    name: "Crear mi primera rutina",
+  });
+  await expect(createRoutine).toBeVisible();
+  await expect(createRoutine).toHaveAttribute("href", "/routines/new");
   await expect(
     page.getByRole("link", { name: "Explorar ejercicios" }),
+  ).toBeVisible();
+
+  const routinesNavigation = page.getByRole("link", { name: "Rutinas" });
+  const workoutNavigation = page.getByRole("link", { name: "Entrenar" });
+  await expect(routinesNavigation).toHaveAttribute("aria-current", "page");
+  await expect(routinesNavigation).toHaveAttribute(
+    "data-navigation-state",
+    "active",
+  );
+  await expect(workoutNavigation).not.toHaveAttribute("aria-current");
+  await expect(workoutNavigation).toHaveAttribute(
+    "data-navigation-state",
+    "inactive",
+  );
+
+  await page.screenshot({
+    fullPage: true,
+    path: testInfo.outputPath("routine-empty-navigation.png"),
+  });
+
+  await createRoutine.click();
+  await expect(page).toHaveURL("/routines/new");
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Crear rutina" }),
   ).toBeVisible();
 });
 
@@ -249,6 +300,17 @@ test("crea y visualiza una rutina mobile-first", async ({ page }, testInfo) => {
 test("entrena, recupera la sesión y finaliza sin perder estado", async ({
   page,
 }, testInfo) => {
+  const runtimeErrors: string[] = [];
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") runtimeErrors.push(message.text());
+  });
+  page.on("response", (response) => {
+    if (response.status() >= 500) {
+      runtimeErrors.push(`${response.status()} ${response.url()}`);
+    }
+  });
+
   if (testInfo.project.name === "mobile-chromium") {
     await page.setViewportSize({ width: 390, height: 844 });
   }
@@ -286,7 +348,8 @@ test("entrena, recupera la sesión y finaliza sin perder estado", async ({
 
   await page.getByRole("link", { name: "Ver rutina" }).click();
   await page.getByRole("button", { name: "Activar" }).click();
-  await page.goto("/workout");
+  await page.getByRole("link", { name: "Entrenar" }).click();
+  await expect(page).toHaveURL("/workout");
 
   await expect(
     page.getByRole("heading", { name: "¿Qué entrenás hoy?" }),
@@ -340,6 +403,33 @@ test("entrena, recupera la sesión y finaliza sin perder estado", async ({
   await page.getByRole("button", { name: "Finalizar entrenamiento" }).click();
   await expect(page.getByText("Entrenamiento completado")).toBeVisible();
   await expect(page.getByText("1", { exact: true })).toBeVisible();
+  await page.screenshot({
+    fullPage: true,
+    path: testInfo.outputPath("training-summary.png"),
+  });
+
+  await page.getByRole("link", { name: "Volver al inicio" }).click();
+  await expect(page).toHaveURL("/");
+  await expect(page.getByText("Entrenamiento completado")).toBeVisible();
+
+  await page.getByRole("link", { name: /Ver entrenamiento/ }).click();
+  await expect(page).toHaveURL(/\/history\/[0-9a-f-]+$/);
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Push A" }),
+  ).toBeVisible();
+  await expect(page.getByText("80 kg × 8")).toBeVisible();
+
+  await page.getByRole("link", { name: "Volver al historial" }).click();
+  await expect(page).toHaveURL("/history");
+  const completedWorkout = page.getByRole("link", {
+    name: /^Ver Push A del/,
+  });
+  await expect(completedWorkout).toHaveCount(1);
+  await completedWorkout.click();
+  await expect(page).toHaveURL(/\/history\/[0-9a-f-]+$/);
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Push A" }),
+  ).toBeVisible();
 
   const dimensions = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -360,6 +450,8 @@ test("entrena, recupera la sesión y finaliza sin perder estado", async ({
 
   await page.screenshot({
     fullPage: true,
-    path: testInfo.outputPath("training-summary.png"),
+    path: testInfo.outputPath("golden-path-history-detail.png"),
   });
+
+  expect(runtimeErrors).toEqual([]);
 });

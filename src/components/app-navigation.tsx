@@ -43,25 +43,33 @@ export function AppNavigation() {
       <div className="mx-auto grid h-[4.5rem] w-full max-w-lg grid-cols-5 px-2 pt-2 lg:mx-0 lg:flex lg:h-auto lg:max-w-none lg:flex-col lg:gap-1 lg:px-4 lg:py-5">
         {navigationItems.map((item) => {
           const isActive = isCurrentPath(pathname, item.href);
-          const activeStyles = item.primary
-            ? "text-[#f4cf3a] lg:bg-[#f4cf3a] lg:text-[#11120f]"
+          const navigationStyles = isActive
+            ? "bg-[#20221f] text-white"
+            : "text-[#8f948c] hover:bg-[#1a1c19] hover:text-white";
+          const iconStyles = item.primary
+            ? "bg-[#f4cf3a] text-[#11120f] lg:bg-[#292b26] lg:text-[#f4cf3a] lg:ring-1 lg:ring-[#4a4731]"
             : isActive
-              ? "bg-[#20221f] text-[#f4cf3a]"
-              : "text-[#8f948c] hover:bg-[#1a1c19] hover:text-white";
+              ? "text-[#f4cf3a]"
+              : "";
 
           return (
             <Link
               aria-current={isActive ? "page" : undefined}
-              className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[0.6875rem] font-bold ${activeStyles} lg:min-h-12 lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:text-sm`}
+              className={`relative flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[0.6875rem] font-bold ${navigationStyles} lg:min-h-12 lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:text-sm`}
+              data-navigation-state={isActive ? "active" : "inactive"}
+              data-primary-action={item.primary ? "true" : undefined}
               href={item.href}
               key={item.href}
             >
+              {isActive ? (
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-[#f4cf3a] lg:inset-y-2 lg:left-0 lg:right-auto lg:h-auto lg:w-0.5"
+                  data-active-indicator="true"
+                />
+              ) : null}
               <span
-                className={
-                  item.primary
-                    ? "grid size-8 place-items-center rounded-md bg-[#f4cf3a] text-[#11120f] lg:bg-transparent"
-                    : "grid size-8 place-items-center"
-                }
+                className={`grid size-8 place-items-center rounded-md ${iconStyles}`}
               >
                 <Icon className="size-5" name={item.icon} />
               </span>

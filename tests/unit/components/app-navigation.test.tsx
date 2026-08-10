@@ -69,4 +69,19 @@ describe("AppNavigation", () => {
       "page",
     );
   });
+
+  it("distingue la ruta activa de la acción principal", () => {
+    mockUsePathname.mockReturnValue("/routines");
+    render(<AppNavigation />);
+
+    const routines = screen.getByRole("link", { name: "Rutinas" });
+    const workout = screen.getByRole("link", { name: "Entrenar" });
+
+    expect(routines).toHaveAttribute("data-navigation-state", "active");
+    expect(routines.querySelector("[data-active-indicator]")).not.toBeNull();
+    expect(workout).toHaveAttribute("data-navigation-state", "inactive");
+    expect(workout).toHaveAttribute("data-primary-action", "true");
+    expect(workout).not.toHaveAttribute("aria-current");
+    expect(workout.querySelector("[data-active-indicator]")).toBeNull();
+  });
 });

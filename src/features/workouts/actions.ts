@@ -211,5 +211,7 @@ export async function finishWorkoutAction(
   }
 
   revalidateWorkout(sessionId);
+  revalidatePath("/history");
+  revalidatePath(`/history/${sessionId}`);
   return { ok: true, value: data };
 }

@@ -32,6 +32,7 @@ function unavailableState(message: string): RoutineActionState {
 function revalidateRoutine(routineId: string) {
   revalidatePath("/");
   revalidatePath("/routines");
+  revalidatePath("/workout");
   revalidatePath(`/routines/${routineId}`);
   revalidatePath(`/routines/${routineId}/edit`);
 }
@@ -481,5 +482,6 @@ export async function archiveRoutineAction(
 
   revalidatePath("/");
   revalidatePath("/routines");
+  revalidatePath("/workout");
   redirect("/routines");
 }
