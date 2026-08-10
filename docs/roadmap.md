@@ -64,6 +64,16 @@ criterios definidos en [`mvp.md`](mvp.md) y no incorporar funciones post-MVP.
 - [x] Permitir cambiar de ejercicio sin modificar el orden de rutina.
 - [x] Finalizar la sesión con confirmación contextual y resumen factual.
 
+## Fase 4.5 — Home adaptativo
+
+- [x] Derivar un `HomeState` exhaustivo desde rutina y sesiones existentes.
+- [x] Priorizar sesión activa y entrenamiento completado durante el día local.
+- [x] Resolver día actual, descanso y próximo entrenamiento mediante weekdays.
+- [x] Mantener selección manual cuando el calendario está incompleto.
+- [x] Incorporar un Bro Cue factual y un resumen semanal pequeño.
+- [x] Revalidar Inicio después de mutaciones de rutinas y entrenamientos.
+- [x] Cubrir los cinco estados en dominio, componentes y E2E responsive.
+
 ## Fase 5 — Historial y progreso
 
 - [ ] Listar sesiones finalizadas y mostrar su detalle.

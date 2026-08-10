@@ -81,6 +81,28 @@ navegación en [`navigation.md`](navigation.md) y el orden de construcción en
   derivados de progreso.
 - Editar una sesión después de finalizarla no forma parte del MVP.
 
+### Inicio adaptativo
+
+- Inicio presenta un único hero según el estado real del usuario: sin rutina,
+  listo para entrenar, entrenando, completado hoy o descanso.
+- Una sesión activa siempre domina Home y permite volver a su ruta en una
+  acción, sin crear otra sesión.
+- “Completado” se deriva de `completed_at` dentro del día local; desaparece de
+  forma natural al cambiar el día y no se guarda como bandera.
+- “Descanso” sólo puede afirmarse cuando todos los días entrenables de la rutina
+  activa tienen weekday y ninguno corresponde a hoy.
+- Una rutina sin weekdays o con calendario parcial permanece lista para
+  entrenar y permite elegir manualmente cualquier día válido.
+- El siguiente entrenamiento se deriva del próximo weekday dentro del ciclo
+  semanal cuando el calendario es completo. Si no puede saberse, no se inventa.
+- Home muestra como máximo un Bro Cue: progreso determinista reciente,
+  referencia real del primer ejercicio del día o cantidad semanal completada,
+  en ese orden.
+- El resumen semanal cuenta únicamente sesiones finalizadas de la semana local.
+  No muestra un objetivo planificado mientras no pueda derivarse honestamente.
+- No se estiman duraciones del plan, no se generan recomendaciones ni se
+  persiste un estado específico para Home.
+
 ### Temporizador de descanso
 
 - Completar una serie inicia el conteo regresivo según el descanso prescripto.
@@ -204,6 +226,19 @@ navegación en [`navigation.md`](navigation.md) y el orden de construcción en
 - Finalizar la sesión requiere confirmación y evita finalizar por accidente.
 - Una sesión finalizada deja de aparecer como activa y queda disponible en el
   historial, no acepta nuevas series y muestra un resumen factual.
+
+### Inicio
+
+- Sin rutina activa, Inicio prioriza crear una y no muestra estadísticas en
+  cero.
+- Con una sesión activa, Inicio muestra el día, duración y ejercicio actual, y
+  permite continuar en un toque.
+- Con una sesión completada hoy y ninguna activa, Inicio muestra duración,
+  series reales y sólo una mejora comparable cuando existe.
+- El día local de una sesión nocturna se resuelve en la zona horaria de la
+  aplicación y no mediante la fecha UTC sin convertir.
+- Cambiar de día en `READY` actualiza el hero antes de iniciar y conserva
+  controles con nombre accesible, foco visible y objetivos táctiles adecuados.
 
 ### Historial y progreso
 

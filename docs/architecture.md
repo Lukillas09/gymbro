@@ -22,6 +22,7 @@ incorporarse hasta que una funcionalidad aprobada los necesite.
 - **Ejercicios:** catálogo común, búsqueda, filtros y detalle técnico.
 - **Rutinas:** rutinas, días, ejercicios y objetivos.
 - **Entrenamientos:** sesión activa, series y descanso.
+- **Home:** composición contextual derivada de rutinas y entrenamientos.
 - **Progreso:** historial, calendario, evolución y récords derivados.
 
 Los dominios sociales quedan fuera del MVP y no condicionan esta arquitectura.
@@ -82,6 +83,11 @@ PostgreSQL `SECURITY INVOKER` protegidas por RLS.
 factual, countdown, queries, Server Actions y componentes de Training Mode. La
 ruta `/workout` prepara o recupera; `/workout/[id]` activa una composición LIVE
 sin navegación global y conserva PostgreSQL como fuente de verdad.
+
+`src/features/home` concentra el modelo exhaustivo `HomeState`, fecha local,
+resolución de días, resumen semanal, Bro Cue y consultas de Inicio. La página
+`/` permanece como Server Component; sólo el selector de día en `READY` y la
+duración viva de `TRAINING` necesitan estado en cliente.
 
 ### `supabase/migrations`
 
@@ -154,6 +160,30 @@ consumen en autenticación, onboarding ni en la aplicación actual.
   desea iniciar.
 - `Progreso` compone historial, calendario y evolución sin duplicar sus datos de
   origen.
+
+### Home adaptativo
+
+Home deriva, sin persistir banderas de interfaz, un estado con esta precedencia:
+sesión activa, sesión completada hoy, ausencia de rutina, día programado hoy y
+descanso verificable. El calendario sólo es determinista cuando todos los días
+entrenables tienen `weekday`; cualquier calendario parcial produce `READY` con
+selección manual.
+
+Las comparaciones de “hoy”, el rango semanal y el siguiente día usan
+`America/Argentina/Buenos_Aires`. El siguiente entrenamiento recorre los
+weekdays futuros dentro del ciclo semanal y no se muestra como dato cierto si
+el calendario está incompleto.
+
+La carga inicial resuelve perfil, sesión activa, rutina activa y sesiones de la
+semana en consultas de servidor paralelas. Sólo `READY` consulta el historial
+reciente del primer ejercicio sugerido y sólo `COMPLETED` carga un conjunto
+acotado de sesiones comparables. No existe N+1 por ejercicio ni se descarga el
+historial completo.
+
+La ruta es dinámica y consulta PostgreSQL en cada request. Las Server Actions de
+rutinas y entrenamientos revalidan `/` además de sus rutas propias para limpiar
+el Router Cache después de una mutación. Los componentes no mantienen una copia
+cliente del estado general de Home.
 
 ## Taxonomía muscular
 

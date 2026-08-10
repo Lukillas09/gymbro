@@ -30,6 +30,7 @@ function unavailableState(message: string): RoutineActionState {
 }
 
 function revalidateRoutine(routineId: string) {
+  revalidatePath("/");
   revalidatePath("/routines");
   revalidatePath(`/routines/${routineId}`);
   revalidatePath(`/routines/${routineId}/edit`);
@@ -66,6 +67,7 @@ export async function createRoutineAction(
     );
   }
 
+  revalidatePath("/");
   revalidatePath("/routines");
   redirect(`/routines/${data.id}/edit`);
 }
@@ -477,6 +479,7 @@ export async function archiveRoutineAction(
     );
   }
 
+  revalidatePath("/");
   revalidatePath("/routines");
   redirect("/routines");
 }

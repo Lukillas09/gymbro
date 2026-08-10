@@ -92,6 +92,7 @@ export async function completeWorkoutSetAction(
     },
   };
 
+  revalidatePath("/");
   revalidatePath("/workout");
   return { ok: true, value: result };
 }

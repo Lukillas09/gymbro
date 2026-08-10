@@ -16,7 +16,9 @@ rutinas permite crear planes, ordenar días y ejercicios, definir prescripciones
 duplicar días, activar una rutina y revisar su distribución muscular. El modo
 Entrenar permite elegir un día activo, registrar series con prefill, recuperar
 la sesión tras recargar, controlar descansos persistentes, cambiar de ejercicio,
-deshacer la última serie y finalizar con un resumen factual.
+deshacer la última serie y finalizar con un resumen factual. Inicio se adapta a
+la situación real del usuario: crear una rutina, empezar el día previsto,
+reanudar una sesión, reconocer lo completado hoy o mostrar el próximo descanso.
 
 ## Funcionalidades planificadas
 
@@ -214,6 +216,23 @@ cambio de ejercicio y Undo también se guardan mediante RPCs transaccionales.
 La referencia `Última vez`, el prefill y mejoras como `+1 REP` se derivan de
 sesiones completadas reales. No se generan recomendaciones, PRs, Session
 Capsules ni puntuaciones opacas en esta fase.
+
+## Home adaptativo
+
+La ruta privada `/` deriva un único estado exhaustivo desde los datos reales:
+`no-routine`, `ready`, `training`, `completed` o `rest`. Una sesión activa tiene
+prioridad; después se considera un entrenamiento completado durante el día de
+Buenos Aires, la rutina activa y, por último, su calendario semanal.
+
+`REST` sólo se muestra cuando todos los días entrenables tienen `weekday`. Si el
+calendario está incompleto o no utiliza weekdays, Home permanece `READY` y deja
+elegir manualmente un día válido. El hero puede acompañarse por un único Bro Cue
+derivado, priorizando progreso factual, la referencia del primer ejercicio del
+día y la cantidad semanal de sesiones completadas.
+
+Home no persiste estado propio, no estima duraciones ni inventa métricas. Las
+acciones de rutinas y Training Mode revalidan `/` para que iniciar, completar o
+modificar un plan se refleje al volver a Inicio.
 
 ## Supabase local
 

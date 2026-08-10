@@ -12,13 +12,20 @@ La aplicación utiliza cinco destinos principales.
 
 Resume el estado actual del usuario:
 
-- próximo día sugerido de la rutina activa;
-- acceso para iniciar o reanudar el entrenamiento;
-- resumen semanal de sesiones completadas;
-- mejora o récord reciente, cuando exista.
+- un hero para crear rutina, iniciar, reanudar, reconocer lo completado o
+  descansar;
+- como máximo un recuerdo factual o mejora reciente;
+- un resumen semanal pequeño cuando aporta información.
 
-Si no existe una rutina activa, el estado vacío dirige a `Rutinas`. Si existe
-una sesión activa, reanudarla reemplaza a cualquier propuesta de inicio.
+La prioridad es sesión activa, sesión completada hoy, ausencia de rutina, día
+programado hoy y descanso verificable. Si no existe una rutina activa, el estado
+vacío dirige a crearla. Si existe una sesión activa, reanudarla reemplaza a
+cualquier propuesta o resumen secundario.
+
+Un día se considera programado sólo mediante `weekday`. Si todos los días
+entrenables tienen weekday y ninguno coincide con hoy, Inicio muestra descanso y
+el siguiente día del ciclo semanal. Si faltan weekdays, deja elegir manualmente
+un día y nunca supone que corresponde descansar.
 
 ### Rutinas
 
@@ -109,13 +116,16 @@ servidor además del Proxy para evitar loops y depender de una sola barrera.
 
 ### Sin rutina activa
 
-`Inicio` y `Entrenar` dirigen a crear o activar una rutina. No se inventa un
-entrenamiento automático.
+`Inicio` prioriza crear una rutina y ofrece explorar ejercicios; `Entrenar`
+dirige a crear o activar un plan. No se inventan entrenamientos ni estadísticas
+en cero.
 
 ### Listo para entrenar
 
-Se muestra el día sugerido, sus ejercicios y una acción principal para iniciar.
-El usuario puede cambiar de día antes de crear la sesión.
+Se muestra el día programado, hasta tres macrogrupos `primary`, cantidad de
+ejercicios y una acción principal para iniciar. El usuario puede cambiar de día
+antes de crear la sesión. Con calendario parcial o ausente, el selector manual
+es la conducta principal.
 
 ### Sesión activa
 
@@ -124,6 +134,9 @@ Navegar a otras secciones no la finaliza ni descarta.
 El ejercicio activo puede cambiarse si otro equipo está ocupado; el orden del
 snapshot permanece intacto.
 
+Inicio muestra duración desde `started_at`, ejercicio y próxima serie, y vuelve
+a `/workout/[id]` con una sola acción.
+
 ### Sesión recuperada
 
 Después de recargar o volver a abrir la aplicación, se presenta la sesión activa
@@ -131,8 +144,16 @@ guardada y se permite continuar desde el último estado persistido.
 
 ### Sesión finalizada
 
-Se muestra un resumen de lo realizado y un acceso al detalle en `Progreso`. Una
-sesión finalizada no puede reabrirse para edición en el MVP.
+Durante el resto del día local, Inicio muestra duración y series reales, una
+mejora comparable si existe y un acceso al resumen inmutable de
+`/workout/[id]`. Una sesión finalizada no puede reabrirse para edición en el
+MVP. Al día siguiente este estado desaparece sin persistir una bandera.
+
+### Descanso verificable
+
+Sólo aparece con un calendario semanal completo y muestra el próximo día
+programado. Puede incluir la cantidad factual de sesiones completadas en la
+semana, sin frases motivacionales ni métricas inventadas.
 
 ## Reglas de navegación mobile-first
 

@@ -73,7 +73,8 @@ function createAccount(email) {
     created_at: timestamp,
     updated_at: timestamp,
   };
-  const state = accountStates.get(email) ?? {
+  const existingState = accountStates.get(email);
+  const state = existingState ?? {
     routines: [],
     days: [],
     routineExercises: [],
@@ -81,6 +82,8 @@ function createAccount(email) {
     workoutExercises: [],
     workoutSets: [],
   };
+
+  if (!existingState) seedHomeScenario(email, state, userId);
 
   accountStates.set(email, state);
   sessions.set(accessToken, { user, profile, state });
@@ -203,6 +206,191 @@ const exercises = [
   },
 ];
 
+function localWeekday(date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Argentina/Buenos_Aires",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const value = (type) =>
+    Number(parts.find((part) => part.type === type)?.value);
+  return new Date(
+    Date.UTC(value("year"), value("month") - 1, value("day")),
+  ).getUTCDay();
+}
+
+function isoOffset(milliseconds) {
+  return new Date(Date.now() + milliseconds).toISOString();
+}
+
+function seedRoutine(state, userId, weekdays) {
+  const routineId = nextUuid();
+  const pushDayId = nextUuid();
+  const pullDayId = nextUuid();
+  state.routines.push({
+    id: routineId,
+    user_id: userId,
+    name: "Push Pull",
+    description: null,
+    goal: "muscle_gain",
+    is_active: true,
+    archived_at: null,
+    created_at: timestamp,
+    updated_at: timestamp,
+  });
+  state.days.push(
+    {
+      id: pushDayId,
+      routine_id: routineId,
+      name: "Push",
+      position: 0,
+      weekday: weekdays[0],
+      created_at: timestamp,
+      updated_at: timestamp,
+    },
+    {
+      id: pullDayId,
+      routine_id: routineId,
+      name: "Pull",
+      position: 1,
+      weekday: weekdays[1],
+      created_at: timestamp,
+      updated_at: timestamp,
+    },
+  );
+  state.routineExercises.push(
+    {
+      id: nextUuid(),
+      routine_day_id: pushDayId,
+      exercise_id: exercises[0].id,
+      position: 0,
+      target_sets: 3,
+      target_reps_min: 8,
+      target_reps_max: 10,
+      rest_seconds: 90,
+      target_rir: 2,
+      notes: null,
+      created_at: timestamp,
+      updated_at: timestamp,
+    },
+    {
+      id: nextUuid(),
+      routine_day_id: pullDayId,
+      exercise_id: exercises[1].id,
+      position: 0,
+      target_sets: 3,
+      target_reps_min: 10,
+      target_reps_max: 12,
+      rest_seconds: 120,
+      target_rir: null,
+      notes: null,
+      created_at: timestamp,
+      updated_at: timestamp,
+    },
+  );
+  return { routineId, pushDayId, pullDayId };
+}
+
+function seedWorkout(state, userId, routine, { completed, previous = false }) {
+  const sessionId = nextUuid();
+  const workoutExerciseId = nextUuid();
+  const startedAt = previous
+    ? isoOffset(-8 * 24 * 60 * 60 * 1000)
+    : isoOffset(-50 * 60 * 1000);
+  const completedAt = completed
+    ? previous
+      ? isoOffset(-8 * 24 * 60 * 60 * 1000 + 40 * 60 * 1000)
+      : isoOffset(-10 * 60 * 1000)
+    : null;
+  state.workoutSessions.push({
+    id: sessionId,
+    user_id: userId,
+    routine_day_id: routine.pushDayId,
+    routine_name_snapshot: "Push Pull",
+    routine_day_name_snapshot: "Push",
+    started_at: startedAt,
+    completed_at: completedAt,
+    status: completed ? "completed" : "in_progress",
+    notes: null,
+    snapshot_locked_at: startedAt,
+    active_workout_exercise_id: completed ? null : workoutExerciseId,
+    rest_ends_at: null,
+    rest_source_set_id: null,
+    created_at: startedAt,
+    updated_at: completedAt ?? startedAt,
+  });
+  state.workoutExercises.push({
+    id: workoutExerciseId,
+    workout_session_id: sessionId,
+    exercise_id: exercises[0].id,
+    source_routine_exercise_id: state.routineExercises.find(
+      ({ routine_day_id }) => routine_day_id === routine.pushDayId,
+    )?.id,
+    position: 0,
+    target_sets: 3,
+    target_reps_min: 8,
+    target_reps_max: 10,
+    rest_seconds: 90,
+    target_rir: 2,
+    exercise_name_snapshot: exercises[0].name,
+    notes: null,
+    created_at: startedAt,
+  });
+  state.workoutSets.push({
+    id: nextUuid(),
+    workout_exercise_id: workoutExerciseId,
+    set_number: 1,
+    weight_kg: 80,
+    repetitions: 8,
+    rir: null,
+    set_type: "working",
+    completed_at: isoOffset(
+      previous ? -8 * 24 * 60 * 60 * 1000 + 5 * 60 * 1000 : -40 * 60 * 1000,
+    ),
+    created_at: startedAt,
+    updated_at: startedAt,
+  });
+  if (completed) {
+    state.workoutSets.push({
+      id: nextUuid(),
+      workout_exercise_id: workoutExerciseId,
+      set_number: 2,
+      weight_kg: 80,
+      repetitions: previous ? 8 : 9,
+      rir: null,
+      set_type: "working",
+      completed_at: isoOffset(
+        previous ? -8 * 24 * 60 * 60 * 1000 + 8 * 60 * 1000 : -35 * 60 * 1000,
+      ),
+      created_at: startedAt,
+      updated_at: startedAt,
+    });
+  }
+  return sessionId;
+}
+
+function seedHomeScenario(email, state, userId) {
+  const scenario = email.split("@")[0];
+  if (!scenario.startsWith("home-")) return;
+  if (scenario.startsWith("home-no-routine")) return;
+
+  const today = localWeekday(new Date());
+  const weekdays = scenario.startsWith("home-rest")
+    ? [(today + 1) % 7, (today + 4) % 7]
+    : [today, (today + 3) % 7];
+  const routine = seedRoutine(state, userId, weekdays);
+
+  if (scenario.startsWith("home-ready")) {
+    seedWorkout(state, userId, routine, { completed: true, previous: true });
+  } else if (scenario.startsWith("home-training")) {
+    seedWorkout(state, userId, routine, { completed: false });
+  } else if (scenario.startsWith("home-completed")) {
+    seedWorkout(state, userId, routine, { completed: true, previous: true });
+    seedWorkout(state, userId, routine, { completed: true });
+  }
+}
+
 function sendJson(response, status, body, headers = {}) {
   response.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
@@ -270,6 +458,12 @@ function inFilter(url, name) {
     .slice(4, -1)
     .split(",")
     .map((item) => item.replace(/^"|"$/g, ""));
+}
+
+function timestampFilter(url, name, operator) {
+  const value = url.searchParams.get(name);
+  const prefix = `${operator}.`;
+  return value?.startsWith(prefix) ? value.slice(prefix.length) : null;
 }
 
 function exerciseRelation(exerciseId) {
@@ -342,6 +536,8 @@ function workoutSessionRows(state, url) {
   const status = equalFilter(url, "status");
   const routineDayIds = inFilter(url, "routine_day_id");
   const exerciseIds = inFilter(url, "workout_exercises.exercise_id");
+  const completedAfter = timestampFilter(url, "completed_at", "gte");
+  const completedBefore = timestampFilter(url, "completed_at", "lt");
 
   return state.workoutSessions
     .filter(
@@ -349,6 +545,12 @@ function workoutSessionRows(state, url) {
         (!id || session.id === id) &&
         (!excludedId || session.id !== excludedId) &&
         (!status || session.status === status) &&
+        (!completedAfter ||
+          (session.completed_at !== null &&
+            Date.parse(session.completed_at) >= Date.parse(completedAfter))) &&
+        (!completedBefore ||
+          (session.completed_at !== null &&
+            Date.parse(session.completed_at) < Date.parse(completedBefore))) &&
         (!routineDayIds || routineDayIds.includes(session.routine_day_id)) &&
         (!exerciseIds ||
           state.workoutExercises.some(
