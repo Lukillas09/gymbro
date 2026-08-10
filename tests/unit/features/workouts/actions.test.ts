@@ -34,7 +34,7 @@ describe("workout actions", () => {
     });
   });
 
-  it("revalida Home, calendario, entrenamiento e historial al finalizar", async () => {
+  it("revalida Home, calendario, entrenamiento, historial y perfil al finalizar", async () => {
     const sessionId = "10000000-0000-4000-8000-000000000001";
 
     const result = await finishWorkoutAction(sessionId);
@@ -53,6 +53,7 @@ describe("workout actions", () => {
       [`/workout/${sessionId}`],
       ["/history"],
       [`/history/${sessionId}`],
+      ["/profile"],
     ]);
   });
 });

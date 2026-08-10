@@ -21,10 +21,15 @@ navegación en [`navigation.md`](navigation.md) y el orden de construcción en
 - Antes de entrar a la aplicación, onboarding solicita username, nombre visible,
   nivel, objetivo y unidad de peso. Sexo biológico, nacimiento, altura y peso son
   opcionales.
-- El perfil básico muestra esos datos reales. El correo permanece administrado
-  por Supabase Auth y no se edita en esta fase.
+- El perfil muestra nombre, username, nivel, objetivo e identidad deportiva
+  derivada de entrenamientos reales. Los datos personales viven en una vista de
+  edición separada. El correo permanece administrado por Supabase Auth y no se
+  edita en esta fase.
 - Las iniciales del nombre pueden representar visualmente al usuario; subir un
   avatar no es requisito del MVP.
+- El perfil puede mostrar como máximo tres métricas positivas, rutina activa,
+  un PR de peso y tres sesiones recientes. No inventa ceros ni patrones con una
+  sola sesión.
 
 ### Biblioteca de ejercicios
 
@@ -158,8 +163,8 @@ navegación en [`navigation.md`](navigation.md) y el orden de construcción en
   rutinas y entrenamientos de forma privada.
 - **HU-02:** Como usuario registrado, quiero iniciar y cerrar sesión para acceder
   de manera segura a mis datos.
-- **HU-03:** Como usuario, quiero editar mi nombre visible para identificar mi
-  perfil.
+- **HU-03:** Como usuario, quiero reconocer mi identidad de entrenamiento y
+  editar mis datos personales sin mezclarlos con mi actividad.
 - **HU-04:** Como usuario, quiero buscar y filtrar ejercicios para encontrar
   rápidamente los que necesito.
 - **HU-05:** Como usuario, quiero crear una rutina con días ordenados para
@@ -198,6 +203,17 @@ navegación en [`navigation.md`](navigation.md) y el orden de construcción en
 
 - El usuario puede guardar un nombre visible válido y verlo reflejado al volver a
   abrir la aplicación.
+- El encabezado de Perfil muestra iniciales deterministas, nombre, username,
+  nivel y objetivo sin depender de Storage.
+- Un usuario sin entrenamientos no ve estadísticas en cero y recibe una acción
+  coherente con la existencia de una rutina activa.
+- Una sesión completada puede aparecer como actividad y PR factual, pero no
+  alcanza para afirmar un patrón muscular.
+- Con evidencia suficiente, Perfil muestra hasta tres macrogrupos `primary`
+  repetidos en sesiones recientes y enlaza cada actividad a Historial.
+- Los cambios válidos guardados en `/profile/edit` se reflejan al volver a
+  `/profile`; sexo, nacimiento, altura, peso y unidad no dominan la vista
+  principal.
 - La búsqueda encuentra coincidencias por nombre sin exigir coincidencia exacta
   de mayúsculas.
 - Los filtros reducen el catálogo según cualquier músculo involucrado y según el

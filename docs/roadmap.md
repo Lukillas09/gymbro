@@ -85,6 +85,19 @@ criterios definidos en [`mvp.md`](mvp.md) y no incorporar funciones post-MVP.
 - [x] Calcular y mostrar récords personales básicos.
 - [x] Verificar que solo se utilicen sesiones y series completadas.
 
+## Fase 5.5 — Identidad de perfil
+
+- [x] Separar identidad deportiva de configuración y datos personales.
+- [x] Crear una cabecera con iniciales deterministas, nombre, username, nivel y
+      objetivo.
+- [x] Derivar métricas positivas, rutina activa, PR y actividad reciente sin
+      duplicar el esquema.
+- [x] Exigir evidencia repetida antes de mostrar macrogrupos recientes.
+- [x] Mantener la edición validada en `/profile/edit` y revalidar cambios de
+      rutinas y entrenamientos.
+- [x] Cubrir estados nuevos, una sesión, historial, PR y ausencia de rutina en
+      pruebas unitarias y E2E responsive.
+
 ## Fase 6 — Cierre del MVP
 
 - [ ] Cubrir los flujos críticos con pruebas automatizadas.

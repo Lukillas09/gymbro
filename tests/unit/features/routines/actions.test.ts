@@ -35,7 +35,7 @@ describe("routine actions", () => {
     mocks.rpc.mockResolvedValue({ error: null });
   });
 
-  it("revalida Home, calendario, rutinas y entrenamiento al activar", async () => {
+  it("revalida Home, calendario, perfil, rutinas y entrenamiento al activar", async () => {
     const routineId = "10000000-0000-4000-8000-000000000001";
 
     await activateRoutineAction(routineId, new FormData());
@@ -46,6 +46,7 @@ describe("routine actions", () => {
     expect(mocks.revalidatePath.mock.calls).toEqual([
       ["/"],
       ["/calendar"],
+      ["/profile"],
       ["/routines"],
       ["/workout"],
       [`/routines/${routineId}`],

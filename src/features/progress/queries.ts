@@ -7,11 +7,11 @@ import {
   buildProgressOverview,
   getProgressPeriod,
 } from "./domain";
+import { mapWeightPersonalRecord, weightPersonalRecordQuery } from "./records";
 import type {
   ProgressExerciseCatalogItem,
   ProgressSourceSession,
   ProgressSourceSet,
-  WeightPersonalRecord,
 } from "./types";
 
 const OVERVIEW_SESSION_LIMIT = 80;
@@ -57,23 +57,6 @@ const exerciseDetailSelect = `
       set_number,
       weight_kg,
       repetitions,
-      completed_at
-    )
-  )
-` as const;
-
-const personalRecordSelect = `
-  id,
-  set_number,
-  weight_kg,
-  repetitions,
-  completed_at,
-  workout_exercise:workout_exercises!workout_sets_workout_exercise_id_fkey!inner (
-    exercise_id,
-    workout_session:workout_sessions!workout_exercises_workout_session_id_fkey!inner (
-      id,
-      user_id,
-      status,
       completed_at
     )
   )
@@ -129,35 +112,12 @@ function exerciseDetailQuery(
     .limit(DETAIL_SESSION_LIMIT + 1);
 }
 
-function personalRecordQuery(
-  supabase: ServerSupabaseClient,
-  userId: string,
-  exerciseId: string,
-) {
-  return supabase
-    .from("workout_sets")
-    .select(personalRecordSelect)
-    .eq("workout_exercise.exercise_id", exerciseId)
-    .eq("workout_exercise.workout_session.user_id", userId)
-    .eq("workout_exercise.workout_session.status", "completed")
-    .gt("repetitions", 0)
-    .order("weight_kg", { ascending: false })
-    .order("repetitions", { ascending: false })
-    .order("completed_at", { ascending: false })
-    .order("set_number", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-}
-
 type ProgressSessionRow = QueryData<
   ReturnType<typeof overviewPeriodQuery>
 >[number];
 type ExerciseCatalogRow = QueryData<
   ReturnType<typeof exerciseCatalogQuery>
 >[number];
-type PersonalRecordRow = NonNullable<
-  QueryData<ReturnType<typeof personalRecordQuery>>
->;
 
 function mapSet(
   row: ProgressSessionRow["workout_exercises"][number]["workout_sets"][number],
@@ -206,21 +166,6 @@ function mapCatalog(rows: readonly ExerciseCatalogRow[]) {
   );
 }
 
-function mapPersonalRecord(row: PersonalRecordRow): WeightPersonalRecord {
-  return {
-    sessionId: row.workout_exercise.workout_session.id,
-    completedAt:
-      row.workout_exercise.workout_session.completed_at ?? row.completed_at,
-    set: {
-      id: row.id,
-      setNumber: row.set_number,
-      weightKg: Number(row.weight_kg),
-      repetitions: row.repetitions,
-      completedAt: row.completed_at,
-    },
-  };
-}
-
 export const getProgressOverview = cache(async (now = new Date()) => {
   const { userId } = await requireCompletedProfile();
   const supabase = await createClient();
@@ -266,7 +211,7 @@ export const getExerciseProgress = cache(async (exerciseId: string) => {
   const supabase = await createClient();
   const [sessionsResult, recordResult] = await Promise.all([
     exerciseDetailQuery(supabase, userId, exerciseId),
-    personalRecordQuery(supabase, userId, exerciseId),
+    weightPersonalRecordQuery(supabase, userId, exerciseId),
   ]);
 
   if (sessionsResult.error || recordResult.error) {
@@ -284,7 +229,7 @@ export const getExerciseProgress = cache(async (exerciseId: string) => {
     firstExercise.exerciseName,
     sessions,
     sessionsResult.count ?? sessions.length,
-    recordResult.data ? mapPersonalRecord(recordResult.data) : null,
+    recordResult.data ? mapWeightPersonalRecord(recordResult.data) : null,
     DETAIL_SESSION_LIMIT,
   );
 });

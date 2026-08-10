@@ -89,9 +89,16 @@ comparaciones sociales.
 
 ### Perfil
 
-Permite consultar el correo de la cuenta, editar el nombre visible y cerrar
-sesión. Las opciones que no estén aprobadas para el MVP no deben aparecer como
-controles inactivos.
+`/profile` presenta primero la identidad deportiva: iniciales, nombre, username,
+nivel, objetivo, hasta tres métricas positivas, plan activo, un PR factual y
+actividad reciente. Cada sesión abre `/history/[id]`; el PR abre el detalle del
+ejercicio en Progreso. La historia permanece visible aunque no exista una rutina
+activa y una sola sesión no se interpreta como patrón muscular.
+
+`/profile/edit` separa configuración de identidad. Allí se editan nombre,
+username, nivel, objetivo, unidad y datos personales opcionales, y se puede
+cerrar sesión. No se agregan tabs nuevas, perfiles públicos, biografía, avatar en
+Storage ni controles inactivos.
 
 ## Acceso y vistas previas
 

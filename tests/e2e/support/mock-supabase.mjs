@@ -88,6 +88,7 @@ function createAccount(email) {
     seedHistoryScenario(email, state, userId);
     seedProgressScenario(email, state, userId);
     seedCalendarScenario(email, state, userId);
+    seedProfileScenario(email, state, userId, profile);
   }
 
   accountStates.set(email, state);
@@ -571,6 +572,52 @@ function seedProgressScenario(email, state, userId) {
   }
 }
 
+function seedProfileScenario(email, state, userId, profile) {
+  const scenario = email.split("@")[0];
+  if (!scenario.startsWith("profile-")) return;
+
+  profile.display_name = "Lucas GymBro";
+  profile.username = "lucas.gymbro";
+  if (scenario.startsWith("profile-new")) return;
+
+  const today = localWeekday(new Date());
+  const routine = seedRoutine(state, userId, [today, (today + 3) % 7]);
+  if (scenario.startsWith("profile-routine")) return;
+
+  if (scenario.startsWith("profile-one")) {
+    seedProgressWorkout(state, userId, routine, {
+      daysAgo: 1,
+      weightKg: 80,
+      repetitions: 8,
+    });
+    return;
+  }
+
+  const sessionIds = [15, 8, 1].map((daysAgo) =>
+    seedProgressWorkout(state, userId, routine, {
+      daysAgo,
+      weightKg: daysAgo === 1 ? 87.5 : 80,
+      repetitions: daysAgo === 1 ? 6 : 8,
+    }),
+  );
+
+  if (scenario.startsWith("profile-no-routine")) {
+    removeRoutinePlan(state);
+  }
+
+  if (scenario.startsWith("profile-pr")) {
+    const latestExercise = state.workoutExercises.find(
+      ({ workout_session_id }) => workout_session_id === sessionIds.at(-1),
+    );
+    for (const set of state.workoutSets.filter(
+      ({ workout_exercise_id }) => workout_exercise_id === latestExercise?.id,
+    )) {
+      set.weight_kg = 90;
+      set.repetitions = 6;
+    }
+  }
+}
+
 function removeRoutinePlan(state) {
   state.routines = [];
   state.days = [];
@@ -926,8 +973,18 @@ function sendDatabaseError(response, code, message) {
 async function handleRest(request, response, url, session) {
   const { state } = session;
 
-  if (request.method === "GET" && url.pathname === "/rest/v1/profiles") {
-    return postgrestResponse(request, response, [session.profile]);
+  if (url.pathname === "/rest/v1/profiles") {
+    if (request.method === "GET") {
+      return postgrestResponse(request, response, [session.profile]);
+    }
+
+    if (request.method === "PATCH") {
+      const body = await readBody(request);
+      Object.assign(session.profile, body, {
+        updated_at: new Date().toISOString(),
+      });
+      return postgrestResponse(request, response, [session.profile]);
+    }
   }
 
   if (request.method === "GET" && url.pathname === "/rest/v1/exercises") {

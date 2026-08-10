@@ -6,7 +6,7 @@ El objetivo del producto es funcionar como un compañero de entrenamiento: rápi
 
 ## Estado del proyecto
 
-El proyecto se encuentra en la fase de historial y progreso del MVP.
+El proyecto se encuentra en la fase de identidad de perfil y cierre del MVP.
 
 Actualmente están implementados el shell mobile-first, la fundación PostgreSQL,
 la autenticación por correo y contraseña, el onboarding y la protección de
@@ -23,7 +23,9 @@ Historial permite recorrer sesiones finalizadas y sus snapshots. Progreso compar
 la frecuencia de los últimos 28 días con los 28 anteriores, muestra evidencia
 semanal y abre una evolución textual por ejercicio con PR de peso histórico. El
 Calendario mensual combina entrenamientos completados, la sesión activa y los
-días fijos de la rutina activa sin persistir eventos duplicados.
+días fijos de la rutina activa sin persistir eventos duplicados. Perfil presenta
+la identidad de entrenamiento desde la rutina, el historial reciente, la
+frecuencia y un PR real; los datos personales se editan por separado.
 
 ## Funcionalidades planificadas
 
@@ -300,6 +302,21 @@ prioriza peso, luego repeticiones y finalmente el orden estable de la sesión. E
 PR exige repeticiones mayores que cero, desempata por repeticiones y fecha, y no
 estima 1RM. Cada evidencia enlaza el entrenamiento original en Historial.
 
+## Identidad de perfil
+
+La ruta privada `/profile` representa al usuario mediante iniciales
+deterministas, nombre visible, username, nivel y objetivo. No muestra como
+contenido principal sexo, nacimiento, altura, peso ni preferencias técnicas.
+Esos campos permanecen disponibles en `/profile/edit`, junto con el cierre de
+sesión, y usan la misma validación del onboarding.
+
+La identidad deportiva se deriva sin tablas nuevas: total de sesiones
+finalizadas, frecuencia de los últimos 28 días, semanas activas, rutina activa y
+hasta tres entrenamientos recientes. El perfil muestra el PR histórico de peso
+del ejercicio más recientemente registrado con la misma regla de Progreso. Los
+macrogrupos recientes sólo aparecen cuando se repiten en al menos dos sesiones;
+un único entrenamiento nunca se presenta como patrón personal.
+
 ## Supabase local
 
 El CLI se instala como dependencia de desarrollo. Con Docker activo, iniciar la
@@ -458,10 +475,10 @@ npm run test:e2e
 ```
 
 Playwright usa un mock local y efímero de los endpoints mínimos de Supabase para
-probar login SSR, la biblioteca, rutinas, Training Mode, Home e historial sin
-credenciales ni red remota. Cada login de prueba mantiene datos aislados y
-efímeros. Este mock sólo se inicia desde la configuración E2E, no demuestra RLS
-y no participa de la aplicación desplegada.
+probar login SSR, biblioteca, rutinas, Training Mode, Home, historial,
+Calendario, Progreso y Perfil sin credenciales ni red remota. Cada login de
+prueba mantiene datos aislados y efímeros. Este mock sólo se inicia desde la
+configuración E2E, no demuestra RLS y no participa de la aplicación desplegada.
 
 La validación remota de workouts es manual, permanece fuera de CI y exige el
 destino de desarrollo y el project ref vinculado:

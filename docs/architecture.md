@@ -18,7 +18,7 @@ incorporarse hasta que una funcionalidad aprobada los necesite.
 ## Dominios del MVP
 
 - **Autenticación:** registro, sesión y cierre de sesión.
-- **Perfil:** identidad visible mínima del usuario.
+- **Perfil:** identidad deportiva derivada y configuración personal separada.
 - **Ejercicios:** catálogo común, búsqueda, filtros y detalle técnico.
 - **Rutinas:** rutinas, días, ejercicios y objetivos.
 - **Entrenamientos:** sesión activa, series y descanso.
@@ -255,6 +255,24 @@ muestra 12 sesiones y usa la fila adicional como centinela. Todas las consultas
 filtran sesiones `completed`, permanecen bajo RLS y conservan enlaces al detalle
 de Historial. No existen tablas de métricas, RPCs ni estado cliente derivado para
 esta funcionalidad; sólo la búsqueda visual del listado es un Client Component.
+
+### Identidad de perfil
+
+`src/features/profile` separa tipos, dominio, queries, acciones y componentes.
+`/profile` permanece como Server Component: verifica identidad, carga en
+paralelo hasta tres sesiones recientes con conteo total, las fechas de hasta 80
+sesiones de los últimos 28 días y una única rutina activa. Después realiza como
+máximo una consulta adicional para el PR del ejercicio más reciente. La consulta
+y el mapper del PR viven en `src/features/progress/records.ts`, compartidos por
+Perfil y el detalle de Progreso.
+
+Las semanas y fechas se agrupan mediante `src/lib/date-time.ts` en
+`America/Argentina/Buenos_Aires`. Una tendencia muscular sólo se deriva si un
+macrogrupo `primary` aparece en al menos dos de las sesiones recientes; no se
+infiere desde una sola observación. `/profile/edit` contiene el único Client
+Component del dominio y reutiliza la validación del onboarding antes de ejecutar
+su Server Action. Las mutaciones relevantes de rutinas y la finalización de un
+workout revalidan `/profile`.
 
 ## Taxonomía muscular
 

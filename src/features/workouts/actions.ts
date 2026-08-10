@@ -215,5 +215,6 @@ export async function finishWorkoutAction(
   revalidateWorkout(sessionId);
   revalidatePath("/history");
   revalidatePath(`/history/${sessionId}`);
+  revalidatePath("/profile");
   return { ok: true, value: data };
 }
