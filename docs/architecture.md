@@ -19,9 +19,10 @@ incorporarse hasta que una funcionalidad aprobada los necesite.
 
 - **Autenticación:** registro, sesión y cierre de sesión.
 - **Perfil:** identidad visible mínima del usuario.
-- **Ejercicios:** catálogo común y búsqueda.
+- **Ejercicios:** catálogo común, búsqueda, filtros y detalle técnico.
 - **Rutinas:** rutinas, días, ejercicios y objetivos.
 - **Entrenamientos:** sesión activa, series y descanso.
+- **Home:** composición contextual derivada de rutinas y entrenamientos.
 - **Progreso:** historial, calendario, evolución y récords derivados.
 
 Los dominios sociales quedan fuera del MVP y no condicionan esta arquitectura.
@@ -68,6 +69,26 @@ tipos generados desde servicios externos.
 `npm run supabase:types:remote`. Ambos comandos escriben el mismo archivo UTF-8
 de forma atómica. No se mantiene una copia manual o alternativa del esquema.
 
+`src/features/exercises` concentra tipos de dominio, etiquetas, normalización,
+filtros, agrupación y consultas del catálogo. Las páginas de App Router cargan
+datos en servidor; el componente interactivo filtra localmente el conjunto
+curado de 73 ejercicios para evitar solicitudes por cada cambio de control.
+
+`src/features/routines` concentra tipos, validación de formularios, cálculo de
+series por macrogrupo, queries y Server Actions. Las páginas resuelven la sesión
+en servidor y las operaciones multirregistro delegan atomicidad a funciones
+PostgreSQL `SECURITY INVOKER` protegidas por RLS.
+
+`src/features/workouts` concentra el estado derivado, prefill, comparación
+factual, countdown, queries, Server Actions y componentes de Training Mode. La
+ruta `/workout` prepara o recupera; `/workout/[id]` activa una composición LIVE
+sin navegación global y conserva PostgreSQL como fuente de verdad.
+
+`src/features/home` concentra el modelo exhaustivo `HomeState`, fecha local,
+resolución de días, resumen semanal, Bro Cue y consultas de Inicio. La página
+`/` permanece como Server Component; sólo el selector de día en `READY` y la
+duración viva de `TRAINING` necesitan estado en cliente.
+
 ### `supabase/migrations`
 
 Migraciones PostgreSQL versionadas y fuente de verdad del esquema. El seed
@@ -100,8 +121,9 @@ cambios de esquema hechos manualmente desde Dashboard. Está prohibido ejecutar
 se versionan.
 
 La fundación se verificó contra el proyecto remoto de desarrollo vinculado: las
-tres migraciones están aplicadas, el seed contiene 7 macrogrupos y 26 músculos
-específicos, y los tipos se generaron desde el esquema remoto real. Una prueba
+nueve migraciones están aplicadas, el seed contiene 7 macrogrupos, 26 músculos,
+73 ejercicios y 14 elementos de equipamiento, y los tipos se generaron desde el
+esquema remoto real. Una prueba
 opt-in confirmó el registro, el trigger de perfil y el aislamiento básico de RLS
 con dos usuarios controlados. pgTAP local continúa pendiente y esta comprobación
 no convierte el proyecto en producción ni sustituye el entorno reproducible.
@@ -139,6 +161,49 @@ consumen en autenticación, onboarding ni en la aplicación actual.
 - `Progreso` compone historial, calendario y evolución sin duplicar sus datos de
   origen.
 
+### Home adaptativo
+
+Home deriva, sin persistir banderas de interfaz, un estado con esta precedencia:
+sesión activa, sesión completada hoy, ausencia de rutina, día programado hoy y
+descanso verificable. El calendario sólo es determinista cuando todos los días
+entrenables tienen `weekday`; cualquier calendario parcial produce `READY` con
+selección manual.
+
+Las comparaciones de “hoy”, el rango semanal y el siguiente día usan
+`America/Argentina/Buenos_Aires`. El siguiente entrenamiento recorre los
+weekdays futuros dentro del ciclo semanal y no se muestra como dato cierto si
+el calendario está incompleto.
+
+La carga inicial resuelve perfil, sesión activa, rutina activa y sesiones de la
+semana en consultas de servidor paralelas. Sólo `READY` consulta el historial
+reciente del primer ejercicio sugerido y sólo `COMPLETED` carga un conjunto
+acotado de sesiones comparables. No existe N+1 por ejercicio ni se descarga el
+historial completo.
+
+La ruta es dinámica y consulta PostgreSQL en cada request. Las Server Actions de
+rutinas y entrenamientos revalidan `/` además de sus rutas propias para limpiar
+el Router Cache después de una mutación. Los componentes no mantienen una copia
+cliente del estado general de Home.
+
+### Historial de entrenamientos
+
+`src/features/history` separa queries, dominio y representación. `/history`
+renderiza la primera página en servidor y un componente cliente solicita páginas
+adicionales mediante una Server Action de sólo lectura. La consulta filtra
+`completed`, ordena por `completed_at DESC, id DESC` y usa ambos valores como
+cursor; cada página trae 20 sesiones más una fila centinela.
+
+`/history/[id]` reutiliza el modelo snapshot de Training Mode y rechaza sesiones
+activas o canceladas. La comparación obtiene en una sola consulta acotada las
+sesiones completadas anteriores que contienen cualquiera de los ejercicios del
+detalle, y luego selecciona la más reciente por `exercise_id`. El dominio
+compartido conserva las mismas reglas deterministas de peso y repeticiones; no
+existe N+1 ni una segunda interpretación de progreso.
+
+La zona horaria y sus límites de calendario viven en `src/lib/date-time.ts`.
+Home e Historial comparten `America/Argentina/Buenos_Aires`, incluida la
+agrupación mensual de sesiones cercanas a medianoche UTC.
+
 ## Taxonomía muscular
 
 `muscle_groups` contiene solamente los siete macrogrupos que organizan la
@@ -165,6 +230,46 @@ La clasificación es deliberadamente funcional y no pretende cubrir una anatomí
 académica completa. Antebrazos se ubica bajo Bíceps para simplificar la
 navegación del producto.
 
+## Clasificación de ejercicios
+
+Cada ejercicio oficial combina tres dimensiones sin duplicarlas:
+
+```text
+movement_pattern + exercise_muscles + exercise_equipment
+```
+
+`movement_pattern` describe la mecánica estable del gesto; los músculos expresan
+participación principal, secundaria o estabilizadora; el equipamiento enumera
+todos los elementos requeridos y usa `position = 1` para presentación principal.
+Esta combinación permite comparar ejercicios para sustituciones o generar
+rutinas en el futuro sin implementar todavía esas decisiones automáticas.
+
+Las instrucciones y errores comunes se almacenan como arrays ordenados de texto,
+una forma tipada y suficiente para listas breves. El catálogo se carga desde dos
+seeds ordenados: taxonomía base y `seeds/exercise-catalog.sql`.
+
+## Planificación de rutinas
+
+La planificación sigue este recorrido:
+
+```text
+Routine -> Routine Day -> Routine Exercise -> Exercise Catalog
+```
+
+`routine_exercises` contiene una prescripción reutilizable: series objetivo,
+rango de repeticiones, descanso y RIR objetivo opcional. No copia nombre,
+músculos, patrón ni equipamiento del catálogo. Activación, append, duplicado y
+reordenamiento tienen RPCs transaccionales; los controles móviles de subir y
+bajar envían el orden completo para evitar estados parciales.
+
+El resumen muscular se deriva al leer y suma `target_sets` una sola vez por
+macrogrupo `primary` y prescripción. No se persiste ni atribuye peso arbitrario a
+participaciones secundarias o estabilizadoras.
+
+Planificar `4 × 8–10` no equivale a completar una serie. Training Mode captura un
+snapshot y guarda resultados como `80 kg × 10` en sus propias tablas,
+conservando el historial aunque cambie o se archive la rutina.
+
 ## Persistencia del entrenamiento activo
 
 - PostgreSQL es la fuente de verdad de una sesión activa.
@@ -175,11 +280,26 @@ navegación del producto.
   confía únicamente en un contador en memoria.
 - La aplicación puede conservar estado local para respuesta inmediata, pero ese
   estado no reemplaza la persistencia ni la autorización del servidor.
+- `start_workout` serializa inicios por usuario, recupera la sesión existente y
+  bloquea un snapshot completo antes del commit.
+- `active_workout_exercise_id` conserva el ejercicio elegido sin modificar el
+  orden de la rutina. `rest_source_set_id` vincula Undo con el descanso iniciado.
+- Completar series, Undo, extensión, salto y finalización se ejecutan mediante
+  RPCs transaccionales `SECURITY INVOKER`.
+- `TrainingState` se deriva como `setup`, `live`, `resting` o `completed`; no se
+  persisten booleanos de interfaz incompatibles.
 
 ## Historial estable y datos derivados
 
 - Una sesión captura el plan usado al iniciarse para que editar una rutina no
   modifique el historial.
+- La lista y el detalle leen nombres, orden y prescripción desde snapshots; sólo
+  los macrogrupos se resuelven desde el ejercicio catalogado todavía
+  referenciado.
+- Las series realizadas son filas de `workout_sets`; `target_sets` sólo permite
+  expresar, por ejemplo, `3 / 4`, sin fabricar una cuarta serie.
+- Duración, cantidad de series, resumen muscular y mejoras factuales se derivan
+  al leer y no se almacenan como metadata visual.
 - Calendario, evolución y récords se calculan desde sesiones finalizadas y series
   completadas.
 - No se crean entidades persistentes para métricas que puedan derivarse de forma
@@ -189,24 +309,32 @@ navegación del producto.
 
 - La autorización se valida en servidor y PostgreSQL.
 - Toda información privada utiliza Row Level Security.
-- Los macrogrupos, músculos y ejercicios oficiales son catálogos de sólo lectura
-  para el cliente común.
+- Macrogrupos, músculos, equipamiento y ejercicios oficiales son catálogos de
+  sólo lectura para el cliente común.
 - Las claves de servicio se usan solo en contexto de servidor.
 - Las tablas hijas validan propiedad recorriendo su rutina o sesión.
 - Las escrituras de ejercicios personalizados se limitan a su creador; los
   ejercicios oficiales no admiten escrituras ordinarias.
 - Los datos externos se validan antes de entrar a la lógica de dominio.
 - Los logs no contienen tokens, correos ni datos privados de entrenamiento.
+- Dos wrappers privados de triggers diferidos usan `SECURITY DEFINER` con
+  `search_path` vacío y permisos revocados. Esta excepción sólo permite validar
+  integridad dentro del esquema `private`; las RPC de negocio siguen siendo
+  `SECURITY INVOKER`.
 
 ## Calidad y experiencia
 
-- El diseño parte de 360 píxeles de ancho y evita scroll horizontal.
+- El diseño se verifica desde 320 píxeles de ancho y evita scroll horizontal.
 - Los controles táctiles, estados accesibles y flujos de error siguen los
   criterios de [`mvp.md`](mvp.md).
 - Los componentes visuales no contienen reglas de negocio complejas.
 - Los flujos críticos de autenticación, rutina, entrenamiento y recuperación
   requieren pruebas automatizadas.
 - CI valida formato, lint, tipos, pruebas y build antes de integrar cambios.
+- Playwright usa un mock HTTP local de Auth y PostgREST para recorrer login SSR,
+  rutas privadas, biblioteca, rutinas y Training Mode sin depender del proyecto
+  remoto ni debilitar la autorización de producción. El mock aísla cuentas, pero
+  no se usa para afirmar que RLS funciona.
 
 ## Complejidad postergada
 

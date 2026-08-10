@@ -12,13 +12,20 @@ La aplicación utiliza cinco destinos principales.
 
 Resume el estado actual del usuario:
 
-- próximo día sugerido de la rutina activa;
-- acceso para iniciar o reanudar el entrenamiento;
-- resumen semanal de sesiones completadas;
-- mejora o récord reciente, cuando exista.
+- un hero para crear rutina, iniciar, reanudar, reconocer lo completado o
+  descansar;
+- como máximo un recuerdo factual o mejora reciente;
+- un resumen semanal pequeño cuando aporta información.
 
-Si no existe una rutina activa, el estado vacío dirige a `Rutinas`. Si existe
-una sesión activa, reanudarla reemplaza a cualquier propuesta de inicio.
+La prioridad es sesión activa, sesión completada hoy, ausencia de rutina, día
+programado hoy y descanso verificable. Si no existe una rutina activa, el estado
+vacío dirige a crearla. Si existe una sesión activa, reanudarla reemplaza a
+cualquier propuesta o resumen secundario.
+
+Un día se considera programado sólo mediante `weekday`. Si todos los días
+entrenables tienen weekday y ninguno coincide con hoy, Inicio muestra descanso y
+el siguiente día del ciclo semanal. Si faltan weekdays, deja elegir manualmente
+un día y nunca supone que corresponde descansar.
 
 ### Rutinas
 
@@ -31,7 +38,18 @@ Permite:
 - elegir la rutina activa.
 
 La biblioteca de ejercicios se abre como parte del flujo de agregar un ejercicio
-y no necesita un destino principal propio.
+y no necesita un destino principal propio. Mientras no existen rutinas, el
+estado vacío ofrece `Explorar ejercicios` hacia `/exercises`; la ficha de detalle
+vive en `/exercises/[slug]` y conserva la navegación principal.
+
+Las rutas secundarias del dominio son:
+
+- `/routines/new`: nombre y objetivo inicial;
+- `/routines/[id]`: plan completo y resumen muscular;
+- `/routines/[id]/edit`: días, prescripciones, orden y selección desde catálogo.
+
+El editor usa controles explícitos para subir y bajar elementos. No depende de
+drag-and-drop y no ofrece todavía iniciar un entrenamiento.
 
 ### Entrenar
 
@@ -42,15 +60,26 @@ Es el acceso directo a la ejecución:
 - después de elegir un día, permite iniciar el entrenamiento;
 - durante la sesión, concentra series, repeticiones, peso y descanso.
 
+`/workout` mantiene la navegación principal mientras se elige el día.
+`/workout/[id]` es la experiencia LIVE: reduce el chrome global, muestra
+duración y progreso, y permite abrir una lista compacta para cambiar de ejercicio
+sin alterar la rutina.
+
 ### Progreso
 
 Agrupa tres vistas relacionadas:
 
-- historial cronológico;
+- historial cronológico disponible en `/history`;
 - calendario de entrenamientos finalizados;
 - evolución y récord por ejercicio.
 
-No incluye recomendaciones ni comparaciones sociales.
+La pantalla Progreso mantiene el acceso en la navegación principal y enlaza el
+historial sin crear una sexta pestaña. Dentro de `/history` y `/history/[id]`,
+Progreso continúa marcado como sección activa. Home COMPLETED y el resumen final
+también pueden abrir directamente el detalle histórico.
+
+No incluye recomendaciones ni comparaciones sociales. Calendario, evolución y
+récords permanecen pendientes.
 
 ### Perfil
 
@@ -83,28 +112,37 @@ servidor además del Proxy para evitar loops y depender de una sola barrera.
 3. El usuario inicia el día sugerido o abre `Entrenar` para elegir otro.
 4. GymBro crea una sesión activa con una copia del plan del día.
 5. El usuario completa series y registra repeticiones y peso.
-6. Entre series, inicia o ajusta el temporizador de descanso.
+6. Completar una serie inicia descanso; puede extenderse 15 segundos o saltarse.
 7. Cada cambio confirmado se persiste y puede recuperarse después de recargar.
 8. El usuario revisa el resumen y confirma la finalización.
-9. La sesión pasa al historial y actualiza calendario, evolución y récords.
+9. La sesión pasa al historial; calendario, evolución y récords se derivarán de
+   esos mismos resultados completados.
 10. `Inicio` sugiere el siguiente día de la rutina activa.
 
 ## Estados del flujo
 
 ### Sin rutina activa
 
-`Inicio` y `Entrenar` dirigen a crear o activar una rutina. No se inventa un
-entrenamiento automático.
+`Inicio` prioriza crear una rutina y ofrece explorar ejercicios; `Entrenar`
+dirige a crear o activar un plan. No se inventan entrenamientos ni estadísticas
+en cero.
 
 ### Listo para entrenar
 
-Se muestra el día sugerido, sus ejercicios y una acción principal para iniciar.
-El usuario puede cambiar de día antes de crear la sesión.
+Se muestra el día programado, hasta tres macrogrupos `primary`, cantidad de
+ejercicios y una acción principal para iniciar. El usuario puede cambiar de día
+antes de crear la sesión. Con calendario parcial o ausente, el selector manual
+es la conducta principal.
 
 ### Sesión activa
 
 La sesión es prioritaria y permanece accesible desde `Inicio` y `Entrenar`.
 Navegar a otras secciones no la finaliza ni descarta.
+El ejercicio activo puede cambiarse si otro equipo está ocupado; el orden del
+snapshot permanece intacto.
+
+Inicio muestra duración desde `started_at`, ejercicio y próxima serie, y vuelve
+a `/workout/[id]` con una sola acción.
 
 ### Sesión recuperada
 
@@ -113,8 +151,16 @@ guardada y se permite continuar desde el último estado persistido.
 
 ### Sesión finalizada
 
-Se muestra un resumen de lo realizado y un acceso al detalle en `Progreso`. Una
-sesión finalizada no puede reabrirse para edición en el MVP.
+Durante el resto del día local, Inicio muestra duración y series reales, una
+mejora comparable si existe y un acceso al resumen inmutable de
+`/workout/[id]`. Una sesión finalizada no puede reabrirse para edición en el
+MVP. Al día siguiente este estado desaparece sin persistir una bandera.
+
+### Descanso verificable
+
+Sólo aparece con un calendario semanal completo y muestra el próximo día
+programado. Puede incluir la cantidad factual de sesiones completadas en la
+semana, sin frases motivacionales ni métricas inventadas.
 
 ## Reglas de navegación mobile-first
 

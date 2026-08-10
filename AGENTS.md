@@ -114,10 +114,45 @@ Los componentes visuales no deben contener reglas de negocio complejas.
   relación y no se duplica en esa tabla.
 - Antebrazos pertenece a Bíceps como simplificación funcional de producto, no
   como afirmación anatómica estricta.
+- Los ejercicios oficiales requieren descripción, dificultad, patrón de
+  movimiento, pasos, errores, al menos un músculo principal y equipamiento.
+- `exercise_equipment.position = 1` identifica el equipamiento principal; todos
+  los elementos relacionados siguen siendo requisitos del ejercicio.
+- El catálogo reproducible vive en `supabase/seeds/exercise-catalog.sql` y
+  resuelve relaciones por slug, sin UUID hardcodeados.
+- Las consultas de ejercicios permanecen en `src/features/exercises`; las rutas
+  no deben dispersar consultas Supabase del dominio.
+- Las consultas, validaciones, cálculos y mutaciones de rutinas permanecen en
+  `src/features/routines`.
+- `routine_exercises` guarda prescripciones; pesos, repeticiones y RIR realizados
+  pertenecen a las futuras filas de entrenamiento y no deben mezclarse.
+- El orden de días y ejercicios comienza en cero y se modifica mediante los RPCs
+  atómicos de reordenamiento, no con updates independientes desde el navegador.
+- El mismo ejercicio puede repetirse entre días, pero no dentro de un mismo día.
+- Activar una rutina debe usar `activate_routine`; no realizar dos updates
+  separados desde la aplicación.
+- La acción destructiva visible de una rutina es archivarla. Las ediciones de
+  nombre, día y prescripción comparan el `updated_at` leído para detectar otra
+  pestaña antes de sobrescribir.
+- Las consultas, estados derivados, validaciones y mutaciones de entrenamiento
+  permanecen en `src/features/workouts`.
+- Iniciar, completar una serie, deshacer, ajustar descanso, seleccionar ejercicio
+  y finalizar usan los RPCs de entrenamiento; nunca aceptar `user_id` del cliente.
+- `workout_exercises` es un snapshot bloqueado de la prescripción y
+  `workout_sets` contiene únicamente resultados realizados.
+- El descanso se deriva de `rest_ends_at`; un contador local nunca es fuente de
+  verdad.
+- Las RPC públicas de entrenamiento son `SECURITY INVOKER`. Sólo los wrappers
+  privados de triggers diferidos usan `SECURITY DEFINER`, con `search_path` vacío
+  y sin permisos directos, para atravesar el esquema `private` cerrado.
 
 La prueba `supabase:remote:test:auth` es manual y opt-in. Sólo puede ejecutarse
 contra el proyecto descartable de desarrollo, no pertenece a `check` o CI y debe
 eliminar los usuarios controlados creados.
+
+La prueba `supabase:remote:test:workouts` también es manual y opt-in. Verifica
+snapshots, idempotencia y RLS dentro de una transacción que siempre finaliza con
+`ROLLBACK`.
 
 ## Calidad
 

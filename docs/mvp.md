@@ -30,11 +30,14 @@ navegación en [`navigation.md`](navigation.md) y el orden de construcción en
 
 - El usuario puede explorar un catálogo común de ejercicios de musculación.
 - Puede buscar ejercicios por nombre y filtrarlos por uno de los siete
-  macrogrupos musculares o por equipamiento.
-- Cada ejercicio presenta, como mínimo, nombre, macrogrupo principal derivado de
-  sus músculos asociados y equipamiento.
+  macrogrupos musculares, músculo específico o equipamiento.
+- Los filtros se combinan. Elegir equipamiento significa que ese elemento forma
+  parte de los requisitos; no implica que sea el único necesario.
+- Cada ejercicio presenta nombre, macrogrupo y músculo principal, equipamiento,
+  dificultad, descripción, técnica ordenada y errores comunes.
 - La asociación interna usa músculos o zonas específicas para permitir una
   clasificación más precisa sin recargar la navegación principal.
+- La ficha distingue músculos principales, secundarios y estabilizadores.
 - El catálogo se utiliza al configurar rutinas. Crear ejercicios personalizados
   no forma parte del alcance confirmado.
 
@@ -45,7 +48,13 @@ navegación en [`navigation.md`](navigation.md) y el orden de construcción en
 - Una rutina contiene días con nombre y orden explícito.
 - Cada día contiene ejercicios ordenados.
 - Para cada ejercicio se configuran la cantidad objetivo de series y
-  repeticiones.
+  repeticiones, descanso y RIR objetivo opcional entre 0 y 5.
+- Los días y sus ejercicios conservan un orden explícito que puede cambiarse con
+  controles accesibles de subir y bajar.
+- Un día puede duplicarse junto con todas sus prescripciones. Un ejercicio puede
+  aparecer en días diferentes, pero no repetirse dentro del mismo día.
+- La vista de rutina muestra una estimación de series objetivo asociadas a
+  músculos `primary`, sin ponderar secundarios ni estabilizadores.
 - El peso se registra en las series realizadas durante el entrenamiento. La
   última carga registrada puede mostrarse como referencia, sin modificar la
   configuración de la rutina.
@@ -60,9 +69,11 @@ navegación en [`navigation.md`](navigation.md) y el orden de construcción en
 - La sesión conserva una copia de los ejercicios, su orden y sus objetivos para
   que posteriores cambios en la rutina no alteren entrenamientos ya iniciados o
   finalizados.
-- El usuario puede registrar y corregir series, repeticiones y peso mientras la
-  sesión está activa.
-- Cada serie puede marcarse como completada de forma independiente.
+- El usuario registra peso y repeticiones con valores precargados desde la última
+  serie comparable cuando existen datos reales.
+- Cada serie se completa de forma independiente y la última puede deshacerse de
+  inmediato mientras la sesión continúa activa.
+- El ejercicio visible puede cambiarse sin modificar el orden guardado del plan.
 - El usuario puede navegar fuera de la vista activa y regresar sin perderla.
 - Al recargar o volver a abrir la aplicación, la sesión activa se recupera desde
   su último estado guardado.
@@ -70,24 +81,52 @@ navegación en [`navigation.md`](navigation.md) y el orden de construcción en
   derivados de progreso.
 - Editar una sesión después de finalizarla no forma parte del MVP.
 
+### Inicio adaptativo
+
+- Inicio presenta un único hero según el estado real del usuario: sin rutina,
+  listo para entrenar, entrenando, completado hoy o descanso.
+- Una sesión activa siempre domina Home y permite volver a su ruta en una
+  acción, sin crear otra sesión.
+- “Completado” se deriva de `completed_at` dentro del día local; desaparece de
+  forma natural al cambiar el día y no se guarda como bandera.
+- “Descanso” sólo puede afirmarse cuando todos los días entrenables de la rutina
+  activa tienen weekday y ninguno corresponde a hoy.
+- Una rutina sin weekdays o con calendario parcial permanece lista para
+  entrenar y permite elegir manualmente cualquier día válido.
+- El siguiente entrenamiento se deriva del próximo weekday dentro del ciclo
+  semanal cuando el calendario es completo. Si no puede saberse, no se inventa.
+- Home muestra como máximo un Bro Cue: progreso determinista reciente,
+  referencia real del primer ejercicio del día o cantidad semanal completada,
+  en ese orden.
+- El resumen semanal cuenta únicamente sesiones finalizadas de la semana local.
+  No muestra un objetivo planificado mientras no pueda derivarse honestamente.
+- No se estiman duraciones del plan, no se generan recomendaciones ni se
+  persiste un estado específico para Home.
+
 ### Temporizador de descanso
 
-- Durante una sesión activa, el usuario puede iniciar un conteo regresivo de
-  descanso.
-- Puede pausar, reanudar, reiniciar o finalizar el conteo antes de tiempo.
+- Completar una serie inicia el conteo regresivo según el descanso prescripto.
+- El usuario puede extenderlo 15 segundos o finalizarlo antes de tiempo.
 - El tiempo restante permanece visible dentro de la experiencia de entrenamiento.
 - Si la página se recarga durante el descanso, el conteo se reconstruye a partir
   de una hora de finalización persistida, en lugar de reiniciarse.
-- El final del descanso debe comunicarse visualmente. Sonido, vibración y
-  notificaciones del sistema requieren una decisión adicional.
+- El final del descanso se comunica visualmente y puede usar vibración como
+  mejora progresiva. No depende de sonido ni de notificaciones del sistema.
 
 ### Historial y calendario
 
 - El historial lista sesiones finalizadas de la más reciente a la más antigua.
-- Cada elemento muestra fecha, rutina o día realizado, duración y cantidad de
-  ejercicios.
+- Cada elemento muestra fecha local, nombre histórico, duración, cantidad real
+  de series y hasta tres macrogrupos principales.
+- El listado carga 20 sesiones por página con cursor estable y nunca incluye
+  sesiones `in_progress` o `cancelled`.
 - El detalle muestra los ejercicios y todas las series registradas con
-  repeticiones y peso.
+  repeticiones, peso, RIR y tipo de set cuando existe.
+- Si se realizaron menos series que las prescriptas, el detalle puede indicar
+  `3 / 4`, pero no crea filas vacías para resultados inexistentes.
+- Una comparación sólo muestra progreso cuando peso o repeticiones mejoran bajo
+  una condición determinista respecto de la sesión completada anterior del
+  mismo ejercicio.
 - El calendario identifica los días con sesiones finalizadas.
 - Seleccionar un día permite ver las sesiones finalizadas en esa fecha.
 - Las sesiones activas no cuentan como entrenamientos completados.
@@ -153,8 +192,10 @@ navegación en [`navigation.md`](navigation.md) y el orden de construcción en
   abrir la aplicación.
 - La búsqueda encuentra coincidencias por nombre sin exigir coincidencia exacta
   de mayúsculas.
-- Los filtros reducen el catálogo según macrogrupo muscular principal o
-  equipamiento.
+- Los filtros reducen el catálogo según cualquier músculo involucrado y según el
+  equipamiento incluido entre sus requisitos.
+- Todo ejercicio oficial muestra al menos un músculo principal, un elemento de
+  equipamiento, instrucciones y errores comunes.
 - Un ejercicio seleccionado desde la biblioteca puede agregarse a un día de
   rutina.
 
@@ -163,6 +204,10 @@ navegación en [`navigation.md`](navigation.md) y el orden de construcción en
 - El usuario puede crear una rutina, agregar al menos un día y agregar ejercicios
   con series y repeticiones objetivo.
 - El orden guardado de días y ejercicios se conserva después de recargar.
+- Duplicar un día copia ejercicios, series, repeticiones, descanso, RIR y orden
+  interno sin dejar una copia parcial.
+- Sets, repeticiones, descanso y RIR fuera de sus rangos PostgreSQL se rechazan
+  antes de guardar.
 - Editar el nombre, objetivos u orden actualiza la rutina sin alterar sesiones
   finalizadas.
 - Activar una rutina desactiva cualquier otra rutina activa del mismo usuario.
@@ -176,19 +221,41 @@ navegación en [`navigation.md`](navigation.md) y el orden de construcción en
   en lugar de crear una segunda.
 - Una serie completada conserva ejercicio, orden, repeticiones y peso después de
   recargar.
-- Corregir una serie activa reemplaza sus valores guardados y se refleja al
-  volver a abrirla.
+- Un doble envío de la misma serie no crea una segunda fila ni reemplaza el
+  resultado ya guardado.
+- Deshacer elimina únicamente la última serie compatible y restaura el descanso
+  asociado cuando corresponde.
 - El temporizador muestra un conteo regresivo y mantiene una hora de finalización
   coherente después de recargar.
+- Extender o saltar el descanso actual persiste el nuevo estado.
+- Cambiar el ejercicio activo se conserva después de recargar sin reordenar el
+  plan.
 - Finalizar la sesión requiere confirmación y evita finalizar por accidente.
 - Una sesión finalizada deja de aparecer como activa y queda disponible en el
-  historial.
+  historial, no acepta nuevas series y muestra un resumen factual.
+
+### Inicio
+
+- Sin rutina activa, Inicio prioriza crear una y no muestra estadísticas en
+  cero.
+- Con una sesión activa, Inicio muestra el día, duración y ejercicio actual, y
+  permite continuar en un toque.
+- Con una sesión completada hoy y ninguna activa, Inicio muestra duración,
+  series reales y sólo una mejora comparable cuando existe.
+- El día local de una sesión nocturna se resuelve en la zona horaria de la
+  aplicación y no mediante la fecha UTC sin convertir.
+- Cambiar de día en `READY` actualiza el hero antes de iniciar y conserva
+  controles con nombre accesible, foco visible y objetivos táctiles adecuados.
 
 ### Historial y progreso
 
-- El historial ordena las sesiones finalizadas por fecha descendente.
+- El historial ordena las sesiones finalizadas por `completed_at` e `id`
+  descendentes, pagina sin `OFFSET` y agrupa por mes según Buenos Aires.
 - El detalle de una sesión reproduce los ejercicios y series registrados al
-  finalizarla.
+  finalizarla desde sus snapshots, aunque la rutina haya cambiado o se archive.
+- La cantidad de series coincide con filas reales de `workout_sets`, no con
+  `target_sets`; RIR ausente y mejoras no comparables no generan contenido
+  ficticio.
 - El calendario marca exactamente las fechas que contienen sesiones finalizadas.
 - La evolución de un ejercicio usa solamente series completadas de sesiones
   finalizadas.
@@ -257,8 +324,7 @@ el dominio correspondiente:
 
 - política y experiencia futura de recuperación de acceso;
 - uso exclusivo de kilogramos o soporte inicial para libras;
-- duración predeterminada del descanso y uso de sonido, vibración o
-  notificaciones;
+- política futura de sonido y notificaciones del sistema para el descanso;
 - posibilidad de crear ejercicios personalizados;
-- eliminación o archivado de rutinas;
+- restauración o eliminación administrativa de rutinas archivadas;
 - política de eliminación de cuenta y sus datos.

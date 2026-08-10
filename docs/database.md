@@ -22,9 +22,9 @@ el volumen del MVP.
 ### Enums y checks
 
 Los vocabularios cerrados y usados como reglas de dominio son enums PostgreSQL:
-nivel, objetivo, unidad preferida, dificultad, participación muscular, estado de
-sesión y tipo de serie. Incorporar un valor nuevo requiere una migración
-explícita.
+nivel, objetivo, unidad preferida, dificultad, patrón de movimiento,
+participación muscular, estado de sesión y tipo de serie. Incorporar un valor
+nuevo requiere una migración explícita.
 
 `body_region` se eliminó junto con su columna porque repetía una agrupación que
 ya resuelven los siete macrogrupos y no tenía otro consumidor.
@@ -62,7 +62,14 @@ conversión de entrada y presentación; esa conversión pertenece a la aplicaci�
 Un ejercicio oficial tiene `is_custom = false` y `created_by = null`. Su slug es
 único globalmente y sólo el rol de servicio puede escribirlo. Un ejercicio
 personalizado tiene creador, slug único por propietario y es privado durante el
-MVP. El creador puede administrarlo y asociarle músculos específicos.
+MVP. El creador puede administrarlo y asociarle músculos y equipamiento del
+catálogo.
+
+Los oficiales deben terminar cada transacción con al menos un músculo `primary`
+y un elemento de equipamiento. Triggers diferidos protegen ambas invariantes sin
+condicionar el orden de inserción del seed. Los personalizados permanecen
+preparados para una futura operación transaccional, pero su UI no pertenece a
+esta fase.
 
 La interfaz todavía no ofrece ejercicios personalizados. El esquema los deja
 preparados sin hacerlos públicos ni incorporarlos al alcance funcional actual.
@@ -73,13 +80,29 @@ preparados sin hacerlos públicos ni incorporarlos al alcance funcional actual.
 `in_progress` por usuario. La aplicación deberá tratar una violación de unicidad
 como señal para recuperar el registro activo existente.
 
+La aplicación activa rutinas mediante `activate_routine(uuid)`, una función
+`SECURITY INVOKER` que bloquea las filas del propietario, desactiva la anterior y
+activa la elegida dentro de una sola transacción. El índice parcial continúa
+siendo la garantía final ante concurrencia.
+
 ### Historial estable
 
 `workout_exercises` conserva el ejercicio realizado, los objetivos de series,
-repeticiones y descanso, y una referencia opcional a la configuración de rutina
-que lo originó. `workout_sets` conserva los valores realizados. Editar o borrar
-la rutina original no altera esas filas históricas. Los ejercicios referenciados
-no pueden borrarse mientras exista historial.
+repeticiones, descanso y RIR, además del nombre que vio el usuario y una
+referencia opcional a la configuración de rutina que lo originó. La sesión copia
+los nombres de rutina y día. `workout_sets` conserva los valores realizados.
+Editar o archivar la rutina original no altera esas filas históricas. Los
+ejercicios referenciados no pueden borrarse mientras exista historial.
+
+El historial normal filtra `workout_sessions.status = 'completed'` y pagina por
+`completed_at DESC, id DESC`. Cada elemento cuenta filas reales de
+`workout_sets`; `target_sets` permanece como contexto del snapshot. La duración
+se deriva de las fechas y no se almacena por separado.
+
+El índice actual `(user_id, started_at DESC)` y la paginación acotada son
+suficientes para el volumen inicial. No se agregó un índice específico de
+`(user_id, status, completed_at, id)` sin evidencia de un plan deficiente; debe
+revisarse con `EXPLAIN` y volumen representativo antes de escalar.
 
 ### Onboarding
 
@@ -118,8 +141,10 @@ como simplificación funcional de producto.
 ### `exercises`
 
 Catálogo de ejercicios oficiales y personalizados. Incluye descripción,
-instrucciones, errores comunes, equipamiento, dificultad e imagen opcional. Los
-slugs oficiales son globales; los personalizados son únicos por creador.
+instrucciones y errores comunes como arrays ordenados, dificultad, patrón de
+movimiento e imagen opcional. Los slugs oficiales son globales; los
+personalizados son únicos por creador. El equipamiento y los músculos se
+resuelven exclusivamente mediante tablas de relación.
 
 ### `exercise_muscles`
 
@@ -127,6 +152,26 @@ Relación sin duplicados entre ejercicio y músculo específico. La participaci�
 es `primary`, `secondary` o `stabilizer`. La clave primaria compuesta es
 `(exercise_id, muscle_id)` y no se guarda `muscle_group_id`: el macrogrupo se
 obtiene mediante `muscles`.
+
+### `equipment`
+
+Catálogo normalizado de 14 elementos de equipamiento con UUID, nombre y slug
+globalmente único. Los usuarios autenticados pueden leerlo, pero no modificarlo.
+
+### `exercise_equipment`
+
+Relación ordenada sin duplicados entre ejercicio y equipamiento. La posición
+comienza en uno y `position = 1` identifica el elemento principal para una card,
+sin volver opcionales los restantes. Filtrar por equipamiento significa que el
+elemento está incluido entre todos los requisitos del ejercicio.
+
+### Patrones de movimiento
+
+`movement_pattern` es un enum con 22 movimientos estables, desde empujes y
+tracciones hasta bisagras, sentadillas, acciones articulares y trabajo del
+tronco. Junto con músculos y equipamiento permite comparar ejercicios para
+sustituciones o generación futura de rutinas sin almacenar reglas inteligentes
+en esta fase.
 
 ### Transformación de la taxonomía anterior
 
@@ -152,30 +197,54 @@ una relación silenciosamente. En `gymbro-dev`, `exercises` y
 Una rutina pertenece a un usuario y contiene días ordenados. Cada día puede
 tener un weekday opcional, pero su posición secuencial es la regla principal.
 Los ejercicios de rutina guardan orden, series objetivo, rango de repeticiones,
-descanso y notas.
+descanso, RIR objetivo opcional entre 0 y 5, y notas. Una restricción única
+impide repetir el mismo ejercicio dentro de un día; puede utilizarse nuevamente
+en otro día de la misma rutina.
 
 Las posiciones comienzan en cero en todos los contenedores ordenados. Series y
 repeticiones objetivo son positivas; el descanso admite entre 0 y 3600 segundos.
+Las constraints de posición son diferibles para que los RPCs de reordenamiento
+asignen una secuencia completa sin colisiones intermedias.
+
+`append_routine_day` y `append_routine_exercise` calculan la siguiente posición
+bajo bloqueo. `duplicate_routine_day` copia el día y todas sus prescripciones en
+una transacción, deja `weekday` sin asignar y conserva orden, sets, reps,
+descanso, RIR y notas. Todos estos RPCs usan `SECURITY INVOKER` y RLS.
 
 ### `workout_sessions`
 
 Una sesión pertenece a un usuario y puede mantener una referencia opcional al
 día de rutina. Sus estados son `in_progress`, `completed` y `cancelled`. Una
 sesión activa no tiene `completed_at`; una completada debe tenerlo y no puede ser
-anterior al inicio.
+anterior al inicio. `routine_name_snapshot`, `routine_day_name_snapshot` y
+`snapshot_locked_at` preservan el contexto usado al comenzar.
+
+`active_workout_exercise_id` conserva la selección del usuario sin alterar el
+orden. `rest_ends_at` guarda la hora absoluta del descanso y
+`rest_source_set_id` identifica la serie que lo inició. Restricciones y triggers
+diferidos garantizan que esas referencias pertenezcan a la misma sesión.
 
 ### `workout_exercises`
 
 Ordena los ejercicios realizados dentro de una sesión. La referencia a
 `source_routine_exercise_id` es opcional y se limpia si cambia la planificación,
-sin eliminar el ejercicio realizado. Series, rango de repeticiones y descanso se
-copian al iniciar la sesión y no dependen después de la rutina.
+sin eliminar el ejercicio realizado. Nombre, orden, series, rango de
+repeticiones, descanso y RIR objetivo se copian al iniciar la sesión y no
+dependen después de la rutina. Las políticas, grants y triggers bloquean la
+edición o eliminación directa del snapshot.
 
 ### `workout_sets`
 
 Registra número de serie, kilogramos, repeticiones, RIR opcional, tipo y momento
-de finalización. El peso admite cero, RIR va de 0 a 10 y no puede repetirse el
-mismo `set_number` dentro de un ejercicio realizado.
+de finalización obligatorio. El peso admite cero, RIR va de 0 a 10 y la clave
+única `(workout_exercise_id, set_number)` impide repetir la misma serie.
+
+Siete RPCs `SECURITY INVOKER` realizan las operaciones de Training Mode:
+`start_workout`, `complete_workout_set`, `undo_last_workout_set`,
+`extend_workout_rest`, `skip_workout_rest`, `select_workout_exercise` y
+`finish_workout`. El inicio serializa por usuario y recupera una sesión activa
+existente; completar una serie es idempotente y finaliza junto con el nuevo
+descanso dentro de la misma transacción.
 
 ## Seguridad y RLS
 
@@ -188,30 +257,49 @@ recibe permisos sobre ellas.
   cliente ordinario.
 - `muscles`: lectura para usuarios autenticados, sin escrituras del cliente
   ordinario.
+- `equipment`: lectura para usuarios autenticados, sin escrituras del cliente
+  ordinario.
 - `exercises`: lectura de oficiales y personalizados propios; sólo el creador
   puede escribir o eliminar un personalizado.
 - `exercise_muscles`: lectura según visibilidad del ejercicio; las escrituras se
   limitan a ejercicios personalizados propios y no permiten modificar el
   catálogo de músculos.
+- `exercise_equipment`: lectura según visibilidad del ejercicio; las escrituras
+  se limitan a ejercicios personalizados propios y el catálogo permanece
+  protegido.
 - `routines`: CRUD limitado por `user_id`.
 - `routine_days` y `routine_exercises`: la propiedad se comprueba recorriendo la
   rutina; también se valida que el ejercicio sea oficial o propio.
-- `workout_sessions`: lectura y creación propias; sólo una sesión activa puede
-  actualizarse, aunque puede pasar a un estado terminal.
-- `workout_exercises` y `workout_sets`: lectura histórica propia; las escrituras
-  sólo se permiten mientras la sesión propietaria está activa.
+- `workout_sessions`: lectura propia; inicio, descanso, selección y finalización
+  se realizan mediante RPCs para sesiones del usuario. El historial agrega un
+  filtro explícito por usuario y estado, además de depender de RLS.
+- `workout_exercises`: lectura histórica propia y creación restringida al
+  snapshot atómico; no admite update o delete ordinarios.
+- `workout_sets`: lectura histórica propia e inserción sólo mediante la operación
+  protegida de una sesión activa; no admite update directo y Undo se limita a la
+  última serie compatible.
 
 No existen políticas generales `USING (true)` para información privada. El rol
 `service_role` conserva acceso administrativo y nunca debe usarse en el
 navegador.
 
 En el proyecto remoto de desarrollo se comprobó mediante consultas de catálogo
-que las 11 tablas tienen RLS habilitado y existen las 36 políticas versionadas.
+que las 13 tablas tienen RLS habilitado y existen las 39 políticas versionadas.
 El asesor de seguridad de Supabase no informó problemas. Además, la prueba
 remota opt-in comprobó que dos usuarios bajo el rol `authenticated` sólo leen y
 actualizan su propio perfil. La preparación administrativa y el cleanup ocurren
 fuera de esas aserciones y toda la prueba RLS se revierte en una transacción.
+Una segunda prueba opt-in confirmó CRUD propio, activación, duplicado, ambos
+reordenamientos y bloqueo de lectura/escritura de rutinas entre dos usuarios;
+también se revirtió por completo. Una tercera prueba transaccional confirmó
+snapshot, inicio idempotente, series, descanso, finalización y aislamiento de
+workouts entre dos usuarios sin usar `service_role`; finalizó con `ROLLBACK`.
 pgTAP local sigue pendiente hasta disponer de Supabase local.
+
+Las RPCs públicas de negocio permanecen como `SECURITY INVOKER`. Dos wrappers de
+triggers diferidos del esquema `private` usan excepcionalmente
+`SECURITY DEFINER`, `search_path` vacío y permisos revocados para comprobar la
+integridad del snapshot atravesando un esquema no accesible al cliente.
 
 ## Trigger de perfil
 
@@ -228,8 +316,10 @@ entregó una sesión inmediata, tal como espera la interfaz.
 
 ## Seed y tipos
 
-`supabase/seed.sql` sólo contiene datos oficiales mínimos y usa el slug como
-clave de idempotencia. No crea usuarios ni entrenamientos ficticios.
+`supabase/seed.sql` contiene macrogrupos y músculos;
+`supabase/seeds/exercise-catalog.sql` contiene equipamiento, ejercicios y todas
+sus relaciones. Ambos usan slugs como clave de idempotencia y no crean usuarios,
+rutinas ni entrenamientos ficticios.
 
 En local, `db reset` aplica el seed automáticamente después de las migraciones.
 El `db push` remoto no lo aplica en el flujo ordinario. Para inicializar sólo el
@@ -237,10 +327,12 @@ proyecto remoto descartable de desarrollo se usa
 `npm run supabase:remote:seed:dev`, protegido por destino, coincidencia del ref
 vinculado y confirmación del dry-run. El seed nunca se aplica a producción.
 
-En el proyecto remoto de desarrollo vinculado, las tres migraciones están
+En el proyecto remoto de desarrollo vinculado, las nueve migraciones están
 aplicadas y el dry-run no informa cambios pendientes. El wrapper aplicó el seed
-y una consulta de sólo lectura verificó exactamente 7 macrogrupos, 26 músculos,
-slugs únicos y ninguna referencia huérfana o duplicada.
+y una segunda ejecución quedó `upToDate`. La consulta versionada de sólo lectura
+verificó 73 ejercicios, 14 elementos de equipamiento, 211 relaciones musculares,
+95 relaciones de equipamiento y cero duplicados, huérfanos, ejercicios sin
+`primary`, sin equipamiento o con contenido incompleto.
 
 Después de aplicar migraciones se generan los tipos desde la misma base validada:
 
@@ -254,9 +346,10 @@ Se ejecuta únicamente el comando correspondiente al modo activo. Ambos escriben
 reemplazarse por otra representación del esquema.
 
 La versión actual de ese archivo fue generada desde el proyecto remoto real,
-está codificada como UTF-8 sin BOM e incluye las 11 tablas y los 8 enums. La
-tercera migración incorpora `muscles`, reemplaza
-`exercise_muscles.muscle_group_id` por `muscle_id` y elimina `body_region`.
+está codificada como UTF-8 sin BOM e incluye las 13 tablas, los 9 enums, los 6
+RPCs de rutinas y los 7 RPCs de entrenamiento. Las migraciones posteriores
+incorporan equipamiento y patrones, el constructor de rutinas y Training Mode sin
+reescribir el historial ya aplicado.
 
 Las pruebas pgTAP permanecen en `supabase/tests/database` y requieren Supabase
 local con contenedores. El proyecto remoto de desarrollo no sustituye esa suite.
