@@ -32,6 +32,7 @@ import { SetRows } from "./set-rows";
 import { WorkoutSummary } from "./workout-summary";
 
 type TrainingModeProps = Readonly<{
+  generatedAt: string;
   initialSession: WorkoutSession;
   previousByExercise: PreviousPerformanceByExercise;
 }>;
@@ -59,6 +60,7 @@ function vibrate(pattern: number | number[]) {
 }
 
 export function TrainingMode({
+  generatedAt,
   initialSession,
   previousByExercise,
 }: TrainingModeProps) {
@@ -67,7 +69,7 @@ export function TrainingMode({
   const [completionNotice, setCompletionNotice] =
     useState<CompletionNotice | null>(null);
   const [switcherOpen, setSwitcherOpen] = useState(false);
-  const [renderedAt] = useState(() => Date.now());
+  const [renderedAt] = useState(() => Date.parse(generatedAt));
   const [pending, startTransition] = useTransition();
   const trainingState = deriveTrainingState(session, renderedAt);
   const activeExercise =
@@ -100,6 +102,7 @@ export function TrainingMode({
           dayName={session.dayName}
           exerciseCount={session.exercises.length}
           exerciseIndex={Math.max(0, session.exercises.length - 1)}
+          generatedAt={generatedAt}
           startedAt={session.startedAt}
         />
         <WorkoutSummary
@@ -283,6 +286,7 @@ export function TrainingMode({
         dayName={session.dayName}
         exerciseCount={session.exercises.length}
         exerciseIndex={activeIndex}
+        generatedAt={generatedAt}
         onOpenExercises={() => setSwitcherOpen(true)}
         startedAt={session.startedAt}
       />
@@ -325,6 +329,7 @@ export function TrainingMode({
         <section className="border-t border-[#30332e] pt-7">
           {trainingState === "resting" && session.restEndsAt ? (
             <RestTimer
+              generatedAt={generatedAt}
               key={session.restEndsAt}
               nextLabel={nextLabel}
               onEnded={() =>

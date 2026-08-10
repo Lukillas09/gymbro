@@ -19,6 +19,7 @@ export default async function ActiveWorkoutPage({
 
   return (
     <TrainingMode
+      generatedAt={new Date().toISOString()}
       initialSession={data.session}
       previousByExercise={data.previousByExercise}
     />

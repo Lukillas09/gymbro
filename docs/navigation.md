@@ -71,15 +71,19 @@ Agrupa tres vistas relacionadas:
 
 - historial cronológico disponible en `/history`;
 - calendario de entrenamientos finalizados;
-- evolución y récord por ejercicio.
+- evolución y récord por ejercicio en `/progress/exercises/[exerciseId]`.
 
 La pantalla Progreso mantiene el acceso en la navegación principal y enlaza el
 historial sin crear una sexta pestaña. Dentro de `/history` y `/history/[id]`,
 Progreso continúa marcado como sección activa. Home COMPLETED y el resumen final
 también pueden abrir directamente el detalle histórico.
 
-No incluye recomendaciones ni comparaciones sociales. Calendario, evolución y
-récords permanecen pendientes.
+`/progress` prioriza una interpretación de las últimas cuatro semanas, seguida
+por frecuencia semanal, mejoras factuales y una lista buscable de ejercicios
+entrenados. El detalle del ejercicio enlaza cada sesión con `/history/[id]`.
+
+No incluye recomendaciones ni comparaciones sociales. El calendario permanece
+pendiente.
 
 ### Perfil
 

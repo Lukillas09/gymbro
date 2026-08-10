@@ -261,6 +261,15 @@ navegación en [`navigation.md`](navigation.md) y el orden de construcción en
   finalizadas.
 - El récord mostrado coincide con la regla de mayor peso, repeticiones y fecha
   definida para el MVP.
+- El resumen compara los últimos 28 días con los 28 anteriores y distribuye las
+  sesiones actuales en cuatro bloques de siete días locales de Buenos Aires.
+- Una mejora sólo se afirma con más repeticiones al mismo peso o más peso con
+  las mismas repeticiones; un cambio simultáneo de ambas variables no se
+  clasifica.
+- Sin sesiones se ofrece Entrenar; con una sola sesión se muestra el registro
+  disponible sin fabricar una tendencia.
+- La evolución textual enlaza las sesiones originales y no incluye volumen,
+  rachas, estimaciones de 1RM ni recomendaciones.
 
 ### Estados de interfaz
 

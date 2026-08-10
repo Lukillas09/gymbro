@@ -6,7 +6,7 @@ El objetivo del producto es funcionar como un compañero de entrenamiento: rápi
 
 ## Estado del proyecto
 
-El proyecto se encuentra en la fase de fundamentos funcionales del MVP.
+El proyecto se encuentra en la fase de historial y progreso del MVP.
 
 Actualmente están implementados el shell mobile-first, la fundación PostgreSQL,
 la autenticación por correo y contraseña, el onboarding y la protección de
@@ -19,6 +19,9 @@ la sesión tras recargar, controlar descansos persistentes, cambiar de ejercicio
 deshacer la última serie y finalizar con un resumen factual. Inicio se adapta a
 la situación real del usuario: crear una rutina, empezar el día previsto,
 reanudar una sesión, reconocer lo completado hoy o mostrar el próximo descanso.
+Historial permite recorrer sesiones finalizadas y sus snapshots. Progreso compara
+la frecuencia de los últimos 28 días con los 28 anteriores, muestra evidencia
+semanal y abre una evolución textual por ejercicio con PR de peso histórico.
 
 ## Funcionalidades planificadas
 
@@ -214,8 +217,8 @@ absoluto y evita duplicados por ejercicio y número de serie. `+15 s`, `Saltar`,
 cambio de ejercicio y Undo también se guardan mediante RPCs transaccionales.
 
 La referencia `Última vez`, el prefill y mejoras como `+1 REP` se derivan de
-sesiones completadas reales. No se generan recomendaciones, PRs, Session
-Capsules ni puntuaciones opacas en esta fase.
+sesiones completadas reales. Training Mode no genera recomendaciones, Session
+Capsules ni puntuaciones opacas.
 
 ## Home adaptativo
 
@@ -249,8 +252,26 @@ una sesión completada anterior con el mismo `exercise_id`, puede mostrarse una
 mejora determinista como `+1 REP` o `+2.5 KG`.
 
 Home COMPLETED y el resumen posterior al entrenamiento enlazan este detalle.
-Calendario, evolución, récords y Session Capsules todavía no forman parte de la
-implementación.
+Calendario y Session Capsules todavía no forman parte de la implementación.
+
+## Progreso básico
+
+La ruta privada `/progress` responde primero con una interpretación prudente y
+luego muestra su evidencia: sesiones de los últimos 28 días, diferencia contra
+los 28 días inmediatamente anteriores y distribución en cuatro bloques de siete
+días según `America/Argentina/Buenos_Aires`. No muestra rachas, volumen ni una
+clasificación de descenso.
+
+Los ejercicios aparecen sólo cuando tienen series reales dentro de sesiones
+finalizadas y se ordenan por uso reciente. La mejora se clasifica únicamente si
+suben las repeticiones con el mismo peso o si sube el peso con las mismas
+repeticiones; los cambios mixtos quedan sin conclusión.
+
+`/progress/exercises/[exerciseId]` muestra sesiones recientes, el último
+registro representativo y el PR histórico de peso. La serie representativa
+prioriza peso, luego repeticiones y finalmente el orden estable de la sesión. El
+PR exige repeticiones mayores que cero, desempata por repeticiones y fecha, y no
+estima 1RM. Cada evidencia enlaza el entrenamiento original en Historial.
 
 ## Supabase local
 

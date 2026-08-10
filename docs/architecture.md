@@ -158,8 +158,8 @@ consumen en autenticación, onboarding ni en la aplicación actual.
   [`navigation.md`](navigation.md).
 - `Entrenar` resuelve primero una sesión activa y, si no existe, el día que se
   desea iniciar.
-- `Progreso` compone historial, calendario y evolución sin duplicar sus datos de
-  origen.
+- `Progreso` compone historial y evolución sin duplicar sus datos de origen; el
+  calendario continúa pendiente.
 
 ### Home adaptativo
 
@@ -203,6 +203,27 @@ existe N+1 ni una segunda interpretación de progreso.
 La zona horaria y sus límites de calendario viven en `src/lib/date-time.ts`.
 Home e Historial comparten `America/Argentina/Buenos_Aires`, incluida la
 agrupación mensual de sesiones cercanas a medianoche UTC.
+
+### Progreso básico
+
+`src/features/progress` separa tipos, dominio, queries y componentes. `/progress`
+es un Server Component que consulta en paralelo dos períodos contiguos de 28
+días y un catálogo acotado de ejercicios realmente entrenados. Cada consulta de
+período trae como máximo 80 sesiones; el catálogo trae hasta 250 participaciones
+recientes y sólo una referencia de serie por participación. El resumen no hace
+consultas por ejercicio ni descarga todo el historial de series.
+
+El dominio elige una serie representativa por sesión con peso máximo,
+repeticiones como desempate y orden estable. Sólo clasifica una mejora cuando
+una dimensión permanece igual y la otra aumenta. La frecuencia, los cuatro
+bloques semanales y las comparaciones usan límites de día local de Buenos Aires.
+
+`/progress/exercises/[exerciseId]` carga en paralelo hasta 13 sesiones recientes
+del ejercicio y una única serie ordenada para resolver el PR histórico. La vista
+muestra 12 sesiones y usa la fila adicional como centinela. Todas las consultas
+filtran sesiones `completed`, permanecen bajo RLS y conservan enlaces al detalle
+de Historial. No existen tablas de métricas, RPCs ni estado cliente derivado para
+esta funcionalidad; sólo la búsqueda visual del listado es un Client Component.
 
 ## Taxonomía muscular
 
@@ -301,7 +322,8 @@ conservando el historial aunque cambie o se archive la rutina.
 - Duración, cantidad de series, resumen muscular y mejoras factuales se derivan
   al leer y no se almacenan como metadata visual.
 - Calendario, evolución y récords se calculan desde sesiones finalizadas y series
-  completadas.
+  completadas. Evolución y PR ya se derivan al leer; el calendario permanece
+  pendiente.
 - No se crean entidades persistentes para métricas que puedan derivarse de forma
   confiable en esta fase.
 

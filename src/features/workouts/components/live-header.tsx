@@ -9,6 +9,7 @@ type LiveHeaderProps = Readonly<{
   exerciseIndex: number;
   exerciseCount: number;
   startedAt: string;
+  generatedAt: string;
   completedAt?: string | null;
   onOpenExercises?: () => void;
 }>;
@@ -18,10 +19,11 @@ export function LiveHeader({
   exerciseIndex,
   exerciseCount,
   startedAt,
+  generatedAt,
   completedAt = null,
   onOpenExercises,
 }: LiveHeaderProps) {
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(() => Date.parse(generatedAt));
 
   useEffect(() => {
     if (completedAt) return;

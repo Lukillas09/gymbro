@@ -360,6 +360,18 @@ Historial, calendario, evolución por ejercicio y récords personales se calcula
 desde sesiones finalizadas y series completadas. No tienen tablas propias en
 esta fase.
 
+Basic Progress no modifica el esquema. El resumen consulta ventanas contiguas
+de 28 días y sólo considera `workout_sessions.status = 'completed'`. Un ejercicio
+entra al listado si una participación histórica tiene al menos una fila en
+`workout_sets` con repeticiones mayores que cero. El detalle limita las sesiones recientes y resuelve el PR con
+una consulta ordenada sobre las series del ejercicio bajo las RLS existentes.
+
+El PR básico es la serie completada de mayor `weight_kg` con
+`repetitions > 0`; los empates se resuelven por repeticiones, fecha de
+finalización y orden estable. No se persisten agregados, puntajes, volumen ni
+estimaciones de 1RM, y `src/types/database.generated.ts` no cambia porque no hay
+una migración nueva.
+
 El volumen por músculo sigue `exercise_muscles -> muscles`; el volumen por
 macrogrupo agrega después `muscles -> muscle_groups`. Por ejemplo, Hip Thrust se
 asocia a Glúteos y deriva Piernas. Esto permite mostrar simultáneamente totales

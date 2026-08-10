@@ -78,9 +78,9 @@ criterios definidos en [`mvp.md`](mvp.md) y no incorporar funciones post-MVP.
 
 - [x] Listar sesiones finalizadas con cursor y mostrar su detalle histórico.
 - [ ] Crear el calendario de entrenamientos.
-- [ ] Mostrar evolución básica por ejercicio.
-- [ ] Calcular y mostrar récords personales básicos.
-- [ ] Verificar que solo se utilicen sesiones y series completadas.
+- [x] Mostrar evolución básica por ejercicio.
+- [x] Calcular y mostrar récords personales básicos.
+- [x] Verificar que solo se utilicen sesiones y series completadas.
 
 ## Fase 6 — Cierre del MVP
 

@@ -86,6 +86,7 @@ function createAccount(email) {
   if (!existingState) {
     seedHomeScenario(email, state, userId);
     seedHistoryScenario(email, state, userId);
+    seedProgressScenario(email, state, userId);
   }
 
   accountStates.set(email, state);
@@ -489,6 +490,86 @@ function seedHistoryScenario(email, state, userId) {
   }
 }
 
+function seedProgressWorkout(
+  state,
+  userId,
+  routine,
+  { daysAgo, exercise = exercises[0], weightKg, repetitions },
+) {
+  const sessionId = seedWorkout(state, userId, routine, { completed: true });
+  setHistoryWorkoutTime(state, sessionId, daysAgo);
+  const workoutExercise = state.workoutExercises.find(
+    ({ workout_session_id }) => workout_session_id === sessionId,
+  );
+  if (!workoutExercise) return sessionId;
+
+  workoutExercise.exercise_id = exercise.id;
+  workoutExercise.exercise_name_snapshot = exercise.name;
+  for (const set of state.workoutSets.filter(
+    ({ workout_exercise_id }) => workout_exercise_id === workoutExercise.id,
+  )) {
+    set.weight_kg = weightKg;
+    set.repetitions = repetitions;
+  }
+  return sessionId;
+}
+
+function seedProgressScenario(email, state, userId) {
+  const scenario = email.split("@")[0];
+  if (!scenario.startsWith("progress-")) return;
+  if (scenario.startsWith("progress-empty")) return;
+
+  const today = localWeekday(new Date());
+  const routine = seedRoutine(state, userId, [today, (today + 3) % 7]);
+
+  if (scenario.startsWith("progress-one")) {
+    seedProgressWorkout(state, userId, routine, {
+      daysAgo: 1,
+      weightKg: 80,
+      repetitions: 8,
+    });
+    return;
+  }
+
+  if (scenario.startsWith("progress-improving")) {
+    seedProgressWorkout(state, userId, routine, {
+      daysAgo: 35,
+      weightKg: 80,
+      repetitions: 8,
+    });
+    seedProgressWorkout(state, userId, routine, {
+      daysAgo: 20,
+      weightKg: 80,
+      repetitions: 8,
+    });
+    seedProgressWorkout(state, userId, routine, {
+      daysAgo: 9,
+      weightKg: 80,
+      repetitions: 9,
+    });
+    seedProgressWorkout(state, userId, routine, {
+      daysAgo: 3,
+      exercise: exercises[1],
+      weightKg: 100,
+      repetitions: 10,
+    });
+    return;
+  }
+
+  if (scenario.startsWith("progress-mixed")) {
+    seedProgressWorkout(state, userId, routine, {
+      daysAgo: 14,
+      weightKg: 80,
+      repetitions: 10,
+    });
+    seedProgressWorkout(state, userId, routine, {
+      daysAgo: 2,
+      weightKg: 85,
+      repetitions: 8,
+    });
+  }
+}
+
 function sendJson(response, status, body, headers = {}) {
   response.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
@@ -559,8 +640,10 @@ function inFilter(url, name) {
 }
 
 function timestampFilter(url, name, operator) {
-  const value = url.searchParams.get(name);
   const prefix = `${operator}.`;
+  const value = url.searchParams
+    .getAll(name)
+    .find((candidate) => candidate.startsWith(prefix));
   return value?.startsWith(prefix) ? value.slice(prefix.length) : null;
 }
 
@@ -643,7 +726,10 @@ function workoutSessionRows(state, url) {
   const excludedId = notEqualFilter(url, "id");
   const status = equalFilter(url, "status");
   const routineDayIds = inFilter(url, "routine_day_id");
-  const exerciseIds = inFilter(url, "workout_exercises.exercise_id");
+  const exerciseId = equalFilter(url, "workout_exercises.exercise_id");
+  const exerciseIds =
+    inFilter(url, "workout_exercises.exercise_id") ??
+    (exerciseId ? [exerciseId] : null);
   const completedAfter = timestampFilter(url, "completed_at", "gte");
   const completedBefore = timestampFilter(url, "completed_at", "lt");
   const historyCursor = historyCursorFilter(url);
@@ -688,6 +774,99 @@ function workoutSessionRows(state, url) {
         : undefined,
     )
     .map((session) => serializeWorkoutSession(state, session));
+}
+
+function workoutExerciseRows(state, url) {
+  const requestedLimit = Number(url.searchParams.get("limit"));
+  return state.workoutExercises
+    .flatMap((workoutExercise) => {
+      const session = state.workoutSessions.find(
+        ({ id }) => id === workoutExercise.workout_session_id,
+      );
+      const sets = state.workoutSets.filter(
+        ({ workout_exercise_id }) => workout_exercise_id === workoutExercise.id,
+      );
+      if (
+        session?.status !== "completed" ||
+        !session.completed_at ||
+        sets.length === 0
+      ) {
+        return [];
+      }
+      return [
+        {
+          ...workoutExercise,
+          workout_sets: sets.slice(0, 1).map(({ id }) => ({ id })),
+          session: {
+            user_id: session.user_id,
+            status: session.status,
+            completed_at: session.completed_at,
+          },
+        },
+      ];
+    })
+    .sort(
+      (left, right) =>
+        Date.parse(right.session.completed_at) -
+        Date.parse(left.session.completed_at),
+    )
+    .slice(
+      0,
+      Number.isSafeInteger(requestedLimit) && requestedLimit > 0
+        ? requestedLimit
+        : undefined,
+    );
+}
+
+function workoutSetRows(state, url) {
+  const exerciseId = equalFilter(url, "workout_exercise.exercise_id");
+  const requestedLimit = Number(url.searchParams.get("limit"));
+  return state.workoutSets
+    .flatMap((set) => {
+      const workoutExercise = state.workoutExercises.find(
+        ({ id }) => id === set.workout_exercise_id,
+      );
+      const session = state.workoutSessions.find(
+        ({ id }) => id === workoutExercise?.workout_session_id,
+      );
+      if (
+        !workoutExercise ||
+        !session ||
+        session.status !== "completed" ||
+        !session.completed_at ||
+        set.repetitions <= 0 ||
+        (exerciseId && workoutExercise.exercise_id !== exerciseId)
+      ) {
+        return [];
+      }
+      return [
+        {
+          ...set,
+          workout_exercise: {
+            exercise_id: workoutExercise.exercise_id,
+            workout_session: {
+              id: session.id,
+              user_id: session.user_id,
+              status: session.status,
+              completed_at: session.completed_at,
+            },
+          },
+        },
+      ];
+    })
+    .sort(
+      (left, right) =>
+        right.weight_kg - left.weight_kg ||
+        right.repetitions - left.repetitions ||
+        Date.parse(right.completed_at) - Date.parse(left.completed_at) ||
+        left.set_number - right.set_number,
+    )
+    .slice(
+      0,
+      Number.isSafeInteger(requestedLimit) && requestedLimit > 0
+        ? requestedLimit
+        : undefined,
+    );
 }
 
 function sendDatabaseError(response, code, message) {
@@ -824,6 +1003,21 @@ async function handleRest(request, response, url, session) {
     url.pathname === "/rest/v1/workout_sessions"
   ) {
     return postgrestResponse(request, response, workoutSessionRows(state, url));
+  }
+
+  if (
+    request.method === "GET" &&
+    url.pathname === "/rest/v1/workout_exercises"
+  ) {
+    return postgrestResponse(
+      request,
+      response,
+      workoutExerciseRows(state, url),
+    );
+  }
+
+  if (request.method === "GET" && url.pathname === "/rest/v1/workout_sets") {
+    return postgrestResponse(request, response, workoutSetRows(state, url));
   }
 
   if (request.method === "POST" && url.pathname.startsWith("/rest/v1/rpc/")) {

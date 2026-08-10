@@ -37,6 +37,7 @@ describe("componentes visibles de Training Mode", () => {
         dayName="Torso A"
         exerciseCount={7}
         exerciseIndex={2}
+        generatedAt="2026-08-10T10:38:42.000Z"
         startedAt="2026-08-10T10:00:00.000Z"
       />,
     );
@@ -47,6 +48,20 @@ describe("componentes visibles de Training Mode", () => {
     expect(
       screen.getByRole("link", { name: "Salir del modo Entrenar" }),
     ).toHaveAttribute("href", "/");
+  });
+
+  it("hidrata la duración con el timestamp generado en servidor", () => {
+    render(
+      <LiveHeader
+        dayName="Torso A"
+        exerciseCount={2}
+        exerciseIndex={0}
+        generatedAt="2026-08-10T10:05:00.000Z"
+        startedAt="2026-08-10T10:00:00.000Z"
+      />,
+    );
+
+    expect(screen.getByText("05:00")).toBeVisible();
   });
 
   it("distingue series completadas, activa y pendientes", () => {
@@ -104,6 +119,7 @@ describe("componentes visibles de Training Mode", () => {
     const user = userEvent.setup();
     render(
       <RestTimer
+        generatedAt="2099-01-01T00:00:00.000Z"
         nextLabel="Serie 2 · Press banca con barra"
         onEnded={vi.fn()}
         onExtend={onExtend}
@@ -171,6 +187,7 @@ describe("componentes visibles de Training Mode", () => {
     const user = userEvent.setup();
     render(
       <TrainingMode
+        generatedAt="2026-08-10T10:00:00.000Z"
         initialSession={workoutSessionFixture}
         previousByExercise={previousPerformanceFixture}
       />,

@@ -115,6 +115,29 @@ export function getLocalDayRange(now: Date, timeZone: string) {
   };
 }
 
+export function getLocalRollingDayRange(
+  now: Date,
+  timeZone: string,
+  dayCount: number,
+  offsetDays = 0,
+) {
+  if (!Number.isInteger(dayCount) || dayCount <= 0) {
+    throw new Error("La cantidad de días debe ser un entero positivo.");
+  }
+  if (!Number.isInteger(offsetDays) || offsetDays < 0) {
+    throw new Error("El desplazamiento debe ser un entero no negativo.");
+  }
+
+  const today = calendarDate(now, timeZone);
+  const end = addCalendarDays(today, 1 - offsetDays);
+  const start = addCalendarDays(end, -dayCount);
+
+  return {
+    start: zonedMidnightToUtc(start, timeZone).toISOString(),
+    end: zonedMidnightToUtc(end, timeZone).toISOString(),
+  };
+}
+
 export function formatLocalDate(
   value: Date | string,
   timeZone: string,

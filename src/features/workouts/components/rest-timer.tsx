@@ -5,6 +5,7 @@ import { formatCountdown, getRestSecondsRemaining } from "../domain";
 
 type RestTimerProps = Readonly<{
   restEndsAt: string;
+  generatedAt: string;
   nextLabel: string;
   pending: boolean;
   onExtend: () => void;
@@ -14,6 +15,7 @@ type RestTimerProps = Readonly<{
 
 export function RestTimer({
   restEndsAt,
+  generatedAt,
   nextLabel,
   pending,
   onExtend,
@@ -21,7 +23,7 @@ export function RestTimer({
   onEnded,
 }: RestTimerProps) {
   const [remaining, setRemaining] = useState(() =>
-    getRestSecondsRemaining(restEndsAt, Date.now()),
+    getRestSecondsRemaining(restEndsAt, Date.parse(generatedAt)),
   );
   const notified = useRef(false);
 
