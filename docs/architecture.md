@@ -185,6 +185,25 @@ rutinas y entrenamientos revalidan `/` además de sus rutas propias para limpiar
 el Router Cache después de una mutación. Los componentes no mantienen una copia
 cliente del estado general de Home.
 
+### Historial de entrenamientos
+
+`src/features/history` separa queries, dominio y representación. `/history`
+renderiza la primera página en servidor y un componente cliente solicita páginas
+adicionales mediante una Server Action de sólo lectura. La consulta filtra
+`completed`, ordena por `completed_at DESC, id DESC` y usa ambos valores como
+cursor; cada página trae 20 sesiones más una fila centinela.
+
+`/history/[id]` reutiliza el modelo snapshot de Training Mode y rechaza sesiones
+activas o canceladas. La comparación obtiene en una sola consulta acotada las
+sesiones completadas anteriores que contienen cualquiera de los ejercicios del
+detalle, y luego selecciona la más reciente por `exercise_id`. El dominio
+compartido conserva las mismas reglas deterministas de peso y repeticiones; no
+existe N+1 ni una segunda interpretación de progreso.
+
+La zona horaria y sus límites de calendario viven en `src/lib/date-time.ts`.
+Home e Historial comparten `America/Argentina/Buenos_Aires`, incluida la
+agrupación mensual de sesiones cercanas a medianoche UTC.
+
 ## Taxonomía muscular
 
 `muscle_groups` contiene solamente los siete macrogrupos que organizan la
@@ -274,6 +293,13 @@ conservando el historial aunque cambie o se archive la rutina.
 
 - Una sesión captura el plan usado al iniciarse para que editar una rutina no
   modifique el historial.
+- La lista y el detalle leen nombres, orden y prescripción desde snapshots; sólo
+  los macrogrupos se resuelven desde el ejercicio catalogado todavía
+  referenciado.
+- Las series realizadas son filas de `workout_sets`; `target_sets` sólo permite
+  expresar, por ejemplo, `3 / 4`, sin fabricar una cuarta serie.
+- Duración, cantidad de series, resumen muscular y mejoras factuales se derivan
+  al leer y no se almacenan como metadata visual.
 - Calendario, evolución y récords se calculan desde sesiones finalizadas y series
   completadas.
 - No se crean entidades persistentes para métricas que puedan derivarse de forma

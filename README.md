@@ -234,6 +234,24 @@ Home no persiste estado propio, no estima duraciones ni inventa métricas. Las
 acciones de rutinas y Training Mode revalidan `/` para que iniciar, completar o
 modificar un plan se refleje al volver a Inicio.
 
+## Historial de entrenamientos
+
+La ruta privada `/history`, accesible desde Progreso, lista únicamente sesiones
+`completed` en orden descendente y las agrupa por mes local. Carga 20 sesiones
+por página mediante un cursor estable de `completed_at + id`; el botón
+`Cargar más` evita descargar el historial completo.
+
+`/history/[id]` reproduce nombres, orden y objetivos del snapshot, y muestra
+sólo los `workout_sets` realmente registrados con peso, repeticiones, RIR y tipo
+cuando aporta contexto. La duración se deriva de `completed_at - started_at` y
+los macrogrupos se resumen desde la relación primaria del ejercicio. Si existe
+una sesión completada anterior con el mismo `exercise_id`, puede mostrarse una
+mejora determinista como `+1 REP` o `+2.5 KG`.
+
+Home COMPLETED y el resumen posterior al entrenamiento enlazan este detalle.
+Calendario, evolución, récords y Session Capsules todavía no forman parte de la
+implementación.
+
 ## Supabase local
 
 El CLI se instala como dependencia de desarrollo. Con Docker activo, iniciar la
@@ -392,10 +410,10 @@ npm run test:e2e
 ```
 
 Playwright usa un mock local y efímero de los endpoints mínimos de Supabase para
-probar login SSR, la biblioteca y el constructor de rutinas sin credenciales ni
-red remota. Cada login de prueba mantiene datos aislados y efímeros. Este mock
-sólo se inicia desde la configuración E2E, no demuestra RLS y no participa de la
-aplicación desplegada.
+probar login SSR, la biblioteca, rutinas, Training Mode, Home e historial sin
+credenciales ni red remota. Cada login de prueba mantiene datos aislados y
+efímeros. Este mock sólo se inicia desde la configuración E2E, no demuestra RLS
+y no participa de la aplicación desplegada.
 
 La validación remota de workouts es manual, permanece fuera de CI y exige el
 destino de desarrollo y el project ref vinculado:

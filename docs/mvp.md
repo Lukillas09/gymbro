@@ -116,10 +116,17 @@ navegación en [`navigation.md`](navigation.md) y el orden de construcción en
 ### Historial y calendario
 
 - El historial lista sesiones finalizadas de la más reciente a la más antigua.
-- Cada elemento muestra fecha, rutina o día realizado, duración y cantidad de
-  ejercicios.
+- Cada elemento muestra fecha local, nombre histórico, duración, cantidad real
+  de series y hasta tres macrogrupos principales.
+- El listado carga 20 sesiones por página con cursor estable y nunca incluye
+  sesiones `in_progress` o `cancelled`.
 - El detalle muestra los ejercicios y todas las series registradas con
-  repeticiones y peso.
+  repeticiones, peso, RIR y tipo de set cuando existe.
+- Si se realizaron menos series que las prescriptas, el detalle puede indicar
+  `3 / 4`, pero no crea filas vacías para resultados inexistentes.
+- Una comparación sólo muestra progreso cuando peso o repeticiones mejoran bajo
+  una condición determinista respecto de la sesión completada anterior del
+  mismo ejercicio.
 - El calendario identifica los días con sesiones finalizadas.
 - Seleccionar un día permite ver las sesiones finalizadas en esa fecha.
 - Las sesiones activas no cuentan como entrenamientos completados.
@@ -242,9 +249,13 @@ navegación en [`navigation.md`](navigation.md) y el orden de construcción en
 
 ### Historial y progreso
 
-- El historial ordena las sesiones finalizadas por fecha descendente.
+- El historial ordena las sesiones finalizadas por `completed_at` e `id`
+  descendentes, pagina sin `OFFSET` y agrupa por mes según Buenos Aires.
 - El detalle de una sesión reproduce los ejercicios y series registrados al
-  finalizarla.
+  finalizarla desde sus snapshots, aunque la rutina haya cambiado o se archive.
+- La cantidad de series coincide con filas reales de `workout_sets`, no con
+  `target_sets`; RIR ausente y mejoras no comparables no generan contenido
+  ficticio.
 - El calendario marca exactamente las fechas que contienen sesiones finalizadas.
 - La evolución de un ejercicio usa solamente series completadas de sesiones
   finalizadas.

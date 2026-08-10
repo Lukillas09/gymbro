@@ -4,6 +4,7 @@ const privateRoutes = [
   "/",
   "/routines",
   "/workout",
+  "/history",
   "/progress",
   "/profile",
   "/exercises",

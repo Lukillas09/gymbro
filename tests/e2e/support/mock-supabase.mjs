@@ -83,7 +83,10 @@ function createAccount(email) {
     workoutSets: [],
   };
 
-  if (!existingState) seedHomeScenario(email, state, userId);
+  if (!existingState) {
+    seedHomeScenario(email, state, userId);
+    seedHistoryScenario(email, state, userId);
+  }
 
   accountStates.set(email, state);
   sessions.set(accessToken, { user, profile, state });
@@ -391,6 +394,101 @@ function seedHomeScenario(email, state, userId) {
   }
 }
 
+function setHistoryWorkoutTime(state, sessionId, daysAgo) {
+  const session = state.workoutSessions.find(({ id }) => id === sessionId);
+  if (!session) return;
+
+  const completedAt = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+  const startedAt = new Date(completedAt.getTime() - 64 * 60 * 1000);
+  session.started_at = startedAt.toISOString();
+  session.completed_at = completedAt.toISOString();
+  session.created_at = session.started_at;
+  session.updated_at = session.completed_at;
+
+  const workoutExercise = state.workoutExercises.find(
+    ({ workout_session_id }) => workout_session_id === sessionId,
+  );
+  if (!workoutExercise) return;
+  const sets = state.workoutSets.filter(
+    ({ workout_exercise_id }) => workout_exercise_id === workoutExercise.id,
+  );
+  for (const [index, set] of sets.entries()) {
+    set.completed_at = new Date(
+      startedAt.getTime() + (index + 1) * 5 * 60 * 1000,
+    ).toISOString();
+  }
+}
+
+function seedDetailedHistoryWorkout(state, userId, routine, daysAgo) {
+  const sessionId = seedWorkout(state, userId, routine, { completed: true });
+  setHistoryWorkoutTime(state, sessionId, daysAgo);
+
+  const workoutExercise = state.workoutExercises.find(
+    ({ workout_session_id }) => workout_session_id === sessionId,
+  );
+  if (!workoutExercise) return sessionId;
+  workoutExercise.target_sets = 4;
+  const sets = state.workoutSets.filter(
+    ({ workout_exercise_id }) => workout_exercise_id === workoutExercise.id,
+  );
+  sets[0].weight_kg = 40;
+  sets[0].repetitions = 10;
+  sets[0].rir = 4;
+  sets[0].set_type = "warmup";
+  sets[1].weight_kg = 80;
+  sets[1].repetitions = 9;
+  sets[1].rir = 2;
+  state.workoutSets.push({
+    ...sets[1],
+    id: nextUuid(),
+    set_number: 3,
+    repetitions: 8,
+    rir: null,
+    set_type: "backoff",
+    completed_at: new Date(
+      Date.parse(sets[1].completed_at) + 5 * 60 * 1000,
+    ).toISOString(),
+  });
+  return sessionId;
+}
+
+function seedHistoryScenario(email, state, userId) {
+  const scenario = email.split("@")[0];
+  if (!scenario.startsWith("history-")) return;
+  if (scenario.startsWith("history-empty")) return;
+
+  const today = localWeekday(new Date());
+  const routine = seedRoutine(state, userId, [today, (today + 3) % 7]);
+
+  if (scenario.startsWith("history-one")) {
+    const sessionId = seedWorkout(state, userId, routine, { completed: true });
+    setHistoryWorkoutTime(state, sessionId, 1);
+    return;
+  }
+
+  if (scenario.startsWith("history-many")) {
+    for (let index = 1; index <= 23; index += 1) {
+      const sessionId = seedWorkout(state, userId, routine, {
+        completed: true,
+      });
+      setHistoryWorkoutTime(state, sessionId, index);
+    }
+    const activeId = seedWorkout(state, userId, routine, { completed: false });
+    const active = state.workoutSessions.find(({ id }) => id === activeId);
+    if (active) active.routine_day_name_snapshot = "NO DEBE APARECER";
+    return;
+  }
+
+  if (scenario.startsWith("history-detail")) {
+    const previousId = seedWorkout(state, userId, routine, {
+      completed: true,
+      previous: true,
+    });
+    setHistoryWorkoutTime(state, previousId, 8);
+    seedDetailedHistoryWorkout(state, userId, routine, 1);
+  }
+}
+
 function sendJson(response, status, body, headers = {}) {
   response.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
@@ -466,6 +564,16 @@ function timestampFilter(url, name, operator) {
   return value?.startsWith(prefix) ? value.slice(prefix.length) : null;
 }
 
+function historyCursorFilter(url) {
+  const value = url.searchParams.get("or");
+  if (!value) return null;
+  const match = value.match(
+    /^\(completed_at\.lt\.([^,]+),and\(completed_at\.eq\.([^,]+),id\.lt\.([^)]+)\)\)$/,
+  );
+  if (!match || match[1] !== match[2]) return null;
+  return { completedAt: match[1], id: match[3] };
+}
+
 function exerciseRelation(exerciseId) {
   const exercise = exercises.find(({ id }) => id === exerciseId);
   if (!exercise) return null;
@@ -538,6 +646,8 @@ function workoutSessionRows(state, url) {
   const exerciseIds = inFilter(url, "workout_exercises.exercise_id");
   const completedAfter = timestampFilter(url, "completed_at", "gte");
   const completedBefore = timestampFilter(url, "completed_at", "lt");
+  const historyCursor = historyCursorFilter(url);
+  const requestedLimit = Number(url.searchParams.get("limit"));
 
   return state.workoutSessions
     .filter(
@@ -551,6 +661,12 @@ function workoutSessionRows(state, url) {
         (!completedBefore ||
           (session.completed_at !== null &&
             Date.parse(session.completed_at) < Date.parse(completedBefore))) &&
+        (!historyCursor ||
+          (session.completed_at !== null &&
+            (Date.parse(session.completed_at) <
+              Date.parse(historyCursor.completedAt) ||
+              (session.completed_at === historyCursor.completedAt &&
+                session.id < historyCursor.id)))) &&
         (!routineDayIds || routineDayIds.includes(session.routine_day_id)) &&
         (!exerciseIds ||
           state.workoutExercises.some(
@@ -562,7 +678,14 @@ function workoutSessionRows(state, url) {
     .sort(
       (left, right) =>
         new Date(right.completed_at ?? right.started_at).getTime() -
-        new Date(left.completed_at ?? left.started_at).getTime(),
+          new Date(left.completed_at ?? left.started_at).getTime() ||
+        right.id.localeCompare(left.id),
+    )
+    .slice(
+      0,
+      Number.isSafeInteger(requestedLimit) && requestedLimit > 0
+        ? requestedLimit
+        : undefined,
     )
     .map((session) => serializeWorkoutSession(state, session));
 }

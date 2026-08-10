@@ -155,7 +155,7 @@ function CompletedHero({
       </div>
       <Link
         className={`${primaryLinkClass} mt-8`}
-        href={`/workout/${state.session.id}`}
+        href={`/history/${state.session.id}`}
       >
         Ver entrenamiento
         <Icon className="size-5" name="arrow-right" />

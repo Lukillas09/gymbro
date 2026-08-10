@@ -82,6 +82,8 @@ const previousSessionsSelect = `
   )
 ` as const;
 
+const PREVIOUS_SESSION_LIMIT = 50;
+
 type ServerSupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
 function sessionQuery(
@@ -112,6 +114,7 @@ function previousSessionsQuery(
   userId: string,
   currentSessionId: string,
   exerciseIds: readonly string[],
+  completedBefore: string,
 ) {
   return supabase
     .from("workout_sessions")
@@ -119,8 +122,10 @@ function previousSessionsQuery(
     .eq("user_id", userId)
     .eq("status", "completed")
     .neq("id", currentSessionId)
+    .lt("completed_at", completedBefore)
     .in("workout_exercises.exercise_id", [...exerciseIds])
-    .order("completed_at", { ascending: false });
+    .order("completed_at", { ascending: false })
+    .limit(PREVIOUS_SESSION_LIMIT);
 }
 
 type WorkoutSessionRow = NonNullable<
@@ -330,7 +335,13 @@ export const getWorkoutSessionById = cache(async (sessionId: string) => {
 
   if (exerciseIds.length > 0) {
     const { data: previousRows, error: previousError } =
-      await previousSessionsQuery(supabase, userId, sessionId, exerciseIds);
+      await previousSessionsQuery(
+        supabase,
+        userId,
+        sessionId,
+        exerciseIds,
+        session.completedAt ?? session.startedAt,
+      );
     if (previousError) {
       throw new Error("No pudimos cargar tu última sesión comparable.");
     }

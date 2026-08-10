@@ -59,4 +59,14 @@ describe("AppNavigation", () => {
       "aria-current",
     );
   });
+
+  it("representa Historial dentro de la sección Progreso", () => {
+    mockUsePathname.mockReturnValue("/history/example");
+    render(<AppNavigation />);
+
+    expect(screen.getByRole("link", { name: "Progreso" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+  });
 });

@@ -220,5 +220,8 @@ describe("componentes visibles de Training Mode", () => {
     expect(screen.getByText("1 h 04 min")).toBeVisible();
     expect(screen.getByText("Pecho · Piernas")).toBeVisible();
     expect(screen.getByText("↑ +1 REP")).toBeVisible();
+    expect(
+      screen.getByRole("link", { name: "Ver en historial" }),
+    ).toHaveAttribute("href", `/history/${completed.id}`);
   });
 });

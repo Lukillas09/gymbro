@@ -86,12 +86,20 @@ export function WorkoutSummary({
         </section>
       ) : null}
 
-      <Link
-        className="inline-flex min-h-12 items-center justify-center rounded-md bg-[#f4cf3a] px-5 text-sm font-black text-[#11120f] hover:bg-[#ffdc4f]"
-        href="/"
-      >
-        Volver al inicio
-      </Link>
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <Link
+          className="inline-flex min-h-12 items-center justify-center rounded-md bg-[#f4cf3a] px-5 text-sm font-black text-[#11120f] hover:bg-[#ffdc4f]"
+          href={`/history/${session.id}`}
+        >
+          Ver en historial
+        </Link>
+        <Link
+          className="inline-flex min-h-12 items-center justify-center rounded-md border border-[#3a3d37] px-5 text-sm font-black text-white hover:border-[#f4cf3a]"
+          href="/"
+        >
+          Volver al inicio
+        </Link>
+      </div>
     </main>
   );
 }

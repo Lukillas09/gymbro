@@ -69,11 +69,17 @@ sin alterar la rutina.
 
 Agrupa tres vistas relacionadas:
 
-- historial cronológico;
+- historial cronológico disponible en `/history`;
 - calendario de entrenamientos finalizados;
 - evolución y récord por ejercicio.
 
-No incluye recomendaciones ni comparaciones sociales.
+La pantalla Progreso mantiene el acceso en la navegación principal y enlaza el
+historial sin crear una sexta pestaña. Dentro de `/history` y `/history/[id]`,
+Progreso continúa marcado como sección activa. Home COMPLETED y el resumen final
+también pueden abrir directamente el detalle histórico.
+
+No incluye recomendaciones ni comparaciones sociales. Calendario, evolución y
+récords permanecen pendientes.
 
 ### Perfil
 
@@ -109,7 +115,8 @@ servidor además del Proxy para evitar loops y depender de una sola barrera.
 6. Completar una serie inicia descanso; puede extenderse 15 segundos o saltarse.
 7. Cada cambio confirmado se persiste y puede recuperarse después de recargar.
 8. El usuario revisa el resumen y confirma la finalización.
-9. La sesión pasa al historial y actualiza calendario, evolución y récords.
+9. La sesión pasa al historial; calendario, evolución y récords se derivarán de
+   esos mismos resultados completados.
 10. `Inicio` sugiere el siguiente día de la rutina activa.
 
 ## Estados del flujo

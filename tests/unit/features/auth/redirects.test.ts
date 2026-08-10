@@ -10,6 +10,7 @@ describe("redirecciones de autenticación", () => {
     expect(resolveSafeRedirect("/exercises/barbell-bench-press")).toBe(
       "/exercises/barbell-bench-press",
     );
+    expect(resolveSafeRedirect("/history/example")).toBe("/history/example");
   });
 
   it("rechaza URLs externas y rutas públicas", () => {

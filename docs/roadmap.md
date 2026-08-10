@@ -76,7 +76,7 @@ criterios definidos en [`mvp.md`](mvp.md) y no incorporar funciones post-MVP.
 
 ## Fase 5 — Historial y progreso
 
-- [ ] Listar sesiones finalizadas y mostrar su detalle.
+- [x] Listar sesiones finalizadas con cursor y mostrar su detalle histórico.
 - [ ] Crear el calendario de entrenamientos.
 - [ ] Mostrar evolución básica por ejercicio.
 - [ ] Calcular y mostrar récords personales básicos.

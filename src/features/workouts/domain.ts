@@ -214,13 +214,10 @@ export function buildWorkoutSummary(
   }
 
   return {
-    durationSeconds: Math.max(
-      0,
-      Math.floor(
-        ((session.completedAt ? Date.parse(session.completedAt) : now) -
-          Date.parse(session.startedAt)) /
-          1000,
-      ),
+    durationSeconds: getWorkoutDurationSeconds(
+      session.startedAt,
+      session.completedAt,
+      now,
     ),
     completedSetCount: session.exercises.reduce(
       (total, exercise) => total + exercise.sets.length,
@@ -233,6 +230,15 @@ export function buildWorkoutSummary(
     ],
     improvements,
   };
+}
+
+export function getWorkoutDurationSeconds(
+  startedAt: string,
+  completedAt: string | null,
+  now = Date.now(),
+) {
+  const end = completedAt ? Date.parse(completedAt) : now;
+  return Math.max(0, Math.floor((end - Date.parse(startedAt)) / 1000));
 }
 
 export function formatDuration(totalSeconds: number) {

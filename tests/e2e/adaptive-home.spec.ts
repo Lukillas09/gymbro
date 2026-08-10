@@ -106,6 +106,12 @@ test("Home COMPLETED reconoce el resultado factual de hoy", async ({
     page.getByRole("link", { name: /Ver entrenamiento/ }),
   ).toBeVisible();
   await verifyResponsive(page, testInfo, "home-completed");
+
+  await page.getByRole("link", { name: /Ver entrenamiento/ }).click();
+  await expect(page).toHaveURL(/\/history\/[0-9a-f-]+$/);
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Push" }),
+  ).toBeVisible();
 });
 
 test("Home REST muestra el próximo día programado", async ({

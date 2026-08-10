@@ -94,6 +94,16 @@ los nombres de rutina y día. `workout_sets` conserva los valores realizados.
 Editar o archivar la rutina original no altera esas filas históricas. Los
 ejercicios referenciados no pueden borrarse mientras exista historial.
 
+El historial normal filtra `workout_sessions.status = 'completed'` y pagina por
+`completed_at DESC, id DESC`. Cada elemento cuenta filas reales de
+`workout_sets`; `target_sets` permanece como contexto del snapshot. La duración
+se deriva de las fechas y no se almacena por separado.
+
+El índice actual `(user_id, started_at DESC)` y la paginación acotada son
+suficientes para el volumen inicial. No se agregó un índice específico de
+`(user_id, status, completed_at, id)` sin evidencia de un plan deficiente; debe
+revisarse con `EXPLAIN` y volumen representativo antes de escalar.
+
 ### Onboarding
 
 El trigger de alta crea únicamente `profiles.id` y valores predeterminados. No
@@ -261,7 +271,8 @@ recibe permisos sobre ellas.
 - `routine_days` y `routine_exercises`: la propiedad se comprueba recorriendo la
   rutina; también se valida que el ejercicio sea oficial o propio.
 - `workout_sessions`: lectura propia; inicio, descanso, selección y finalización
-  se realizan mediante RPCs para sesiones del usuario.
+  se realizan mediante RPCs para sesiones del usuario. El historial agrega un
+  filtro explícito por usuario y estado, además de depender de RLS.
 - `workout_exercises`: lectura histórica propia y creación restringida al
   snapshot atómico; no admite update o delete ordinarios.
 - `workout_sets`: lectura histórica propia e inserción sólo mediante la operación

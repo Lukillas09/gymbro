@@ -59,7 +59,7 @@ describe("AdaptiveHome", () => {
       screen.getByRole("link", { name: /Ver entrenamiento/ }),
     ).toHaveAttribute(
       "href",
-      `/workout/${completedHomeModel.state.session.id}`,
+      `/history/${completedHomeModel.state.session.id}`,
     );
   });
 
